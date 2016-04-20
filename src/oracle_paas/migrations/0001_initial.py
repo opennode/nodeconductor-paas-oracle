@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='Deploy',
+            name='Deployment',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('created', model_utils.fields.AutoCreatedField(default=django.utils.timezone.now, verbose_name='created', editable=False)),
@@ -78,12 +78,12 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(to='structure.ServiceSettings'),
         ),
         migrations.AddField(
-            model_name='deploy',
+            model_name='deployment',
             name='service_project_link',
-            field=models.ForeignKey(related_name='deploys', on_delete=django.db.models.deletion.PROTECT, to='oracle_paas.OracleServiceProjectLink'),
+            field=models.ForeignKey(related_name='deployments', on_delete=django.db.models.deletion.PROTECT, to='oracle_paas.OracleServiceProjectLink'),
         ),
         migrations.AddField(
-            model_name='deploy',
+            model_name='deployment',
             name='tags',
             field=taggit.managers.TaggableManager(to='taggit.Tag', through='taggit.TaggedItem', blank=True, help_text='A comma-separated list of tags.', verbose_name='Tags'),
         ),

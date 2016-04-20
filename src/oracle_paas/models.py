@@ -1,6 +1,5 @@
 from django.db import models
 
-from nodeconductor.core import models as core_models
 from nodeconductor.structure import models as structure_models
 
 
@@ -21,13 +20,13 @@ class OracleServiceProjectLink(structure_models.ServiceProjectLink):
         return 'oracle-spl'
 
 
-class Deploy(structure_models.Resource):
+class Deployment(structure_models.Resource):
 
     service_project_link = models.ForeignKey(
-        OracleServiceProjectLink, related_name='deploys', on_delete=models.PROTECT)
+        OracleServiceProjectLink, related_name='deployments', on_delete=models.PROTECT)
 
     report = models.TextField(blank=True)
 
     @classmethod
     def get_url_name(cls):
-        return 'oracle-deploys'
+        return 'oracle-deployments'

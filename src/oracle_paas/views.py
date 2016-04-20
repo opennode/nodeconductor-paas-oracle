@@ -16,9 +16,9 @@ class OracleServiceProjectLinkViewSet(structure_views.BaseServiceProjectLinkView
     serializer_class = serializers.ServiceProjectLinkSerializer
 
 
-class DeployViewSet(structure_views.BaseResourceViewSet):
-    queryset = models.Deploy.objects.all()
-    serializer_class = serializers.DeploySerializer
+class DeploymentViewSet(structure_views.BaseResourceViewSet):
+    queryset = models.Deployment.objects.all()
+    serializer_class = serializers.DeploymentSerializer
 
     def perform_provision(self, serializer):
         resource = serializer.save()
@@ -31,7 +31,7 @@ class DeployViewSet(structure_views.BaseResourceViewSet):
 
             .. code-block:: http
 
-                POST /api/oracle-deploys/a04a26e46def4724a0841abcb81926ac/provision/ HTTP/1.1
+                POST /api/oracle-deployments/a04a26e46def4724a0841abcb81926ac/provision/ HTTP/1.1
                 Content-Type: application/json
                 Accept: application/json
                 Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4

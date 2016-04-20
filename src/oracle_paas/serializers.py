@@ -25,7 +25,7 @@ class ServiceProjectLinkSerializer(structure_serializers.BaseServiceProjectLinkS
         }
 
 
-class DeploySerializer(structure_serializers.BaseResourceSerializer):
+class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
 
     service = serializers.HyperlinkedRelatedField(
         source='service_project_link.service',
@@ -38,7 +38,7 @@ class DeploySerializer(structure_serializers.BaseResourceSerializer):
         queryset=models.OracleServiceProjectLink.objects.all())
 
     class Meta(structure_serializers.BaseResourceSerializer.Meta):
-        model = models.Deploy
-        view_name = 'oracle-deploys-detail'
+        model = models.Deployment
+        view_name = 'oracle-deployments-detail'
         fields = structure_serializers.BaseResourceSerializer.Meta.fields + ('report',)
         read_only_fields = structure_serializers.BaseResourceSerializer.Meta.read_only_fields + ('report',)
