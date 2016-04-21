@@ -13,7 +13,7 @@ install_requires = [
 
 
 setup(
-    name='oracle-paas',
+    name='nodeconductor-paas-oracle',
     version='0.1.0',
     author='OpenNode Team',
     author_email='info@opennodecloud.com',
