@@ -60,8 +60,7 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
             return response.Response({'detail': "Empty report"}, status=status.HTTP_400_BAD_REQUEST)
 
     @decorators.detail_route(methods=['post'])
-    # @structure_views.safe_operation(valid_state=(models.Deployment.States.ONLINE, models.Deployment.States.RESIZING))
-    @structure_views.safe_operation()
+    @structure_views.safe_operation(valid_state=(models.Deployment.States.ONLINE, models.Deployment.States.RESIZING))
     def resize(self, request, resource, uuid=None):
         """ Request for DB Instance resize. Example:
 
