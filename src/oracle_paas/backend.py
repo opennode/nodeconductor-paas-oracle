@@ -1,9 +1,13 @@
+import logging
+
 from django.conf import settings as django_settings
 from rest_framework.reverse import reverse
 
 from nodeconductor.core.utils import request_api
 from nodeconductor.structure import ServiceBackend, ServiceBackendError
 from nodeconductor_jira.models import Project, Issue
+
+logger = logging.getLogger(__name__)
 
 
 class OracleBackendError(ServiceBackendError):
@@ -24,58 +28,57 @@ class OracleBackend(ServiceBackend):
         return True
 
     def sync(self):
-        pass
+        try:
+            self.project = Project.objects.get(
+                backend_id=self.settings.token, available_for_all=True)
+        except Project.DoesNotExist:
+            raise OracleBackendError("Can't find JIRA project '%s'" % self.settings.token)
 
     def provision(self, deployment, request, ssh_key=None):
-        try:
-            proj = Project.objects.get(backend_id=self.settings.token, available_for_all=True)
-        except Project.DoesNotExist:
-            self._set_erred(deployment, "Can't find JIRA project '%s'" % self.settings.token)
-
         # create fake and empty SshKey instance for string formating
         if not ssh_key:
             ssh_key = type('SshKey', (object,), {'name': '', 'uuid': type('UUID', (object,), {'hex': ''})})
 
+        self.sync()  # fetch project
         message = self._compile_message(deployment, 'provision', ssh_key=ssh_key)
         payload = {
-            "project": reverse('jira-projects-detail', kwargs={'uuid': proj.uuid.hex}),
+            "project": reverse('jira-projects-detail', kwargs={'uuid': self.project.uuid.hex}),
             "summary": self.templates['provision']['summary'],
             "description": message,
             "priority": dict(Issue.Priority.CHOICES).get(Issue.Priority.MINOR),
             "impact": dict(Issue.Impact.CHOICES).get(Issue.Impact.MEDIUM),
         }
 
-        response = request_api(request, 'jira-issues-list', method='POST', data=payload)
-        if not response.success:
-            self._set_erred(deployment, "Can't create JIRA ticket: %s" % response.status)
-
-        deployment.support_request = Issue.objects.get(uuid=response.data['uuid'])
-        deployment.begin_provisioning()
-        deployment.save(update_fields=['state'])
+        data = self._jira_request(
+            'jira-issues-list', request, data=payload, error_message="Can't create JIRA ticket")
+        deployment.support_request = Issue.objects.get(uuid=data['uuid'])
+        deployment.save(update_fields=['support_request'])
 
     def destroy(self, deployment, request):
-        payload = {
-            "issue": reverse('jira-issues-detail', kwargs={'uuid': deployment.support_request.uuid.hex}),
-            "message": self._compile_message(deployment, 'undeploy'),
-        }
-        response = request_api(request, 'jira-comments-list', method='POST', data=payload)
-        if not response.success:
-            self._set_erred(deployment, "Can't add JIRA comment: %s" % response.status)
-
-        deployment.begin_deleting()
-        deployment.save(update_fields=['state'])
+        self._support_request('undeploy', deployment, request)
 
     def resize(self, deployment, request):
-        payload = {
-            "issue": reverse('jira-issues-detail', kwargs={'uuid': deployment.support_request.uuid.hex}),
-            "message": self._compile_message(deployment, 'resize'),
-        }
-        response = request_api(request, 'jira-comments-list', method='POST', data=payload)
-        if not response.success:
-            self._set_erred(deployment, "Can't add JIRA comment: %s" % response.status)
+        self._support_request('resize', deployment, request)
 
-        deployment.begin_resizing()
-        deployment.save(update_fields=['state'])
+    def _support_request(self, name, deployment, request):
+        issue = reverse('jira-issues-detail', kwargs={'uuid': deployment.support_request.uuid.hex})
+        self._jira_request(
+            'jira-comments-list',
+            request,
+            data={
+                "issue": issue,
+                "message": self._compile_message(deployment, name),
+            },
+            error_message="Can't add JIRA comment")
+
+    def _jira_request(self, view_name, request, data=None, error_message="Request failed"):
+        response = request_api(request, view_name, method='POST' if data else 'GET', data=data)
+        if not response.ok:
+            logger.error('[%s] Failed request to %s: %s' % (
+                response.status_code, response.url, response.text))
+            error_message += ': %s'
+            raise OracleBackendError(error_message % response.text)
+        return response.json()
 
     def _compile_message(self, deployment, template_name, add_title=False, **kwargs):
         template = self.templates[template_name]
@@ -89,9 +92,3 @@ class OracleBackend(ServiceBackend):
             message = template['summary'] + '\n\n' + message
 
         return message
-
-    def _set_erred(self, deployment, message=''):
-        deployment.error_message = message
-        deployment.set_erred()
-        deployment.save(update_fields=['state', 'error_message'])
-        raise OracleBackendError(deployment.error_message)

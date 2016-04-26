@@ -1,3 +1,4 @@
+from functools import wraps
 from django.utils import timezone
 from rest_framework import decorators, exceptions, response, status
 
@@ -5,6 +6,19 @@ from nodeconductor.structure import views as structure_views
 
 from . import models, serializers
 from .backend import OracleBackendError
+
+
+def track_exceptions(view_fn):
+    @wraps(view_fn)
+    def wrapped(self, request, resource, *args, **kwargs):
+        try:
+            return view_fn(self, request, resource, *args, **kwargs)
+        except OracleBackendError as e:
+            resource.error_message = unicode(e)
+            resource.set_erred()
+            resource.save(update_fields=['state', 'error_message'])
+            raise exceptions.APIException(e)
+    return wrapped
 
 
 class OracleServiceViewSet(structure_views.BaseServiceViewSet):
@@ -29,7 +43,11 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
     def perform_provision(self, serializer):
         resource = serializer.save()
         backend = resource.get_backend()
-        backend.provision(resource, self.request, ssh_key=serializer.validated_data.get('ssh_public_key'))
+        backend.provision(
+            resource, self.request, ssh_key=serializer.validated_data.get('ssh_public_key'))
+
+        resource.begin_provisioning()
+        resource.save(update_fields=['state'])
 
     @decorators.detail_route(methods=['post'])
     @structure_views.safe_operation(valid_state=models.Deployment.States.PROVISIONING)
@@ -80,6 +98,8 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         """
 
         if resource.state == resource.States.RESIZING:
+            if not self.request.user.is_staff:
+                raise exceptions.PermissionDenied
             resource.set_resized()
             resource.save(update_fields=['state'])
             return response.Response({'detail': "Resizing complete"}, status=status.HTTP_200_OK)
@@ -91,31 +111,32 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         resource.flavor = serializer.validated_data.get('flavor')
         resource.save(update_fields=['flavor', 'state'])
 
-        try:
-            backend = resource.get_backend()
-            backend.resize(resource, self.request)
-        except OracleBackendError as e:
-            raise exceptions.APIException(e)
+        backend = resource.get_backend()
+        backend.resize(resource, self.request)
 
+        resource.begin_resizing()
+        resource.save(update_fields=['state'])
         return response.Response({'detail': "Resizing scheduled"}, status=status.HTTP_200_OK)
 
     @structure_views.safe_operation(valid_state=(models.Deployment.States.ONLINE, models.Deployment.States.DELETING))
+    @track_exceptions
     def destroy(self, request, resource, uuid=None):
         """ Request for DB Instance deletion or confirm deletion success.
             A proper action will be taken depending on the current deployment state.
         """
 
         if resource.state == resource.States.DELETING:
+            if not self.request.user.is_staff:
+                raise exceptions.PermissionDenied
             self.perform_destroy(resource)
             return response.Response({'detail': "Deployment deleted"}, status=status.HTTP_200_OK)
 
         resource.state = resource.States.DELETION_SCHEDULED
         resource.save(update_fields=['state'])
 
-        try:
-            backend = resource.get_backend()
-            backend.destroy(resource, self.request)
-        except OracleBackendError as e:
-            raise exceptions.APIException(e)
+        backend = resource.get_backend()
+        backend.destroy(resource, self.request)
 
+        resource.begin_deleting()
+        resource.save(update_fields=['state'])
         return response.Response({'detail': "Deletion scheduled"}, status=status.HTTP_200_OK)
