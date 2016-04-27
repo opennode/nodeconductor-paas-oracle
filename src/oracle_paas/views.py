@@ -43,8 +43,15 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
     def perform_provision(self, serializer):
         resource = serializer.save()
         backend = resource.get_backend()
-        backend.provision(
-            resource, self.request, ssh_key=serializer.validated_data.get('ssh_public_key'))
+
+        try:
+            backend.provision(
+                resource, self.request, ssh_key=serializer.validated_data.get('ssh_public_key'))
+        except OracleBackendError as e:
+            resource.error_message = unicode(e)
+            resource.set_erred()
+            resource.save(update_fields=['state', 'error_message'])
+            raise
 
         resource.begin_provisioning()
         resource.save(update_fields=['state'])
