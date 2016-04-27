@@ -18,6 +18,8 @@ class Migration(migrations.Migration):
     dependencies = [
         ('structure', '0034_change_service_settings_state_field'),
         ('taggit', '0002_auto_20150616_2121'),
+        ('openstack', '0028_instance_flavor_disk'),
+        ('nodeconductor_jira', '0004_project_available_for_all'),
     ]
 
     operations = [
@@ -35,6 +37,14 @@ class Migration(migrations.Migration):
                 ('backend_id', models.CharField(max_length=255, blank=True)),
                 ('start_time', models.DateTimeField(null=True, blank=True)),
                 ('report', models.TextField(blank=True)),
+                ('db_name', models.CharField(max_length=256)),
+                ('db_size', models.PositiveIntegerField(help_text=b'Storage size in GB')),
+                ('db_type', models.CharField(max_length=256)),
+                ('db_version', models.CharField(max_length=256)),
+                ('db_template', models.CharField(max_length=256)),
+                ('db_charset', models.CharField(max_length=256)),
+                ('user_data', models.TextField(blank=True)),
+                ('flavor', models.ForeignKey(related_name='+', to='openstack.Flavor')),
             ],
             options={
                 'abstract': False,
@@ -84,8 +94,18 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='deployment',
+            name='support_request',
+            field=models.ForeignKey(related_name='+', to='nodeconductor_jira.Issue', null=True),
+        ),
+        migrations.AddField(
+            model_name='deployment',
             name='tags',
             field=taggit.managers.TaggableManager(to='taggit.Tag', through='taggit.TaggedItem', blank=True, help_text='A comma-separated list of tags.', verbose_name='Tags'),
+        ),
+        migrations.AddField(
+            model_name='deployment',
+            name='tenant',
+            field=models.ForeignKey(related_name='+', to='openstack.Tenant'),
         ),
         migrations.AlterUniqueTogether(
             name='oracleserviceprojectlink',

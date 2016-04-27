@@ -25,7 +25,27 @@ class Deployment(structure_models.Resource):
     service_project_link = models.ForeignKey(
         OracleServiceProjectLink, related_name='deployments', on_delete=models.PROTECT)
 
+    support_request = models.ForeignKey('nodeconductor_jira.Issue', related_name='+', null=True)
+    tenant = models.ForeignKey('openstack.Tenant', related_name='+')
+    flavor = models.ForeignKey('openstack.Flavor', related_name='+')
     report = models.TextField(blank=True)
+    db_name = models.CharField(max_length=256)
+    db_size = models.PositiveIntegerField(help_text='Storage size in GB')
+    db_type = models.CharField(max_length=256)
+    db_version = models.CharField(max_length=256)
+    db_template = models.CharField(max_length=256)
+    db_charset = models.CharField(max_length=256)
+    user_data = models.TextField(blank=True)
+
+    @property
+    def flavor_info(self):
+        flavor = self.flavor
+        backend = self.get_backend()
+        return "%s -- vCPUs: %d, RAM: %d GB, System Storage: %d GB" % (
+            flavor.name,
+            flavor.cores,
+            backend.mb2gb(flavor.ram),
+            backend.mb2gb(flavor.disk))
 
     @classmethod
     def get_url_name(cls):
