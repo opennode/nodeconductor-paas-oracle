@@ -27,7 +27,7 @@ class OracleExtension(NodeConductorExtension):
                     Oracle DB Configuration:
                     Name: {deployment.db_name}
                     Size: {deployment.db_size} GB
-                    Version: {deployment.db_version} {deployment.db_type}
+                    Version: {deployment.db_version_type}
                     Database type: {deployment.db_template}
                     Character set: {deployment.db_charset}
                     Additional data: {deployment.user_data}
