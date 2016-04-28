@@ -2,7 +2,7 @@ from django.apps import AppConfig
 
 
 class OracleConfig(AppConfig):
-    name = 'oracle_paas'
+    name = 'nodeconductor_paas_oracle'
     verbose_name = 'Oracle'
     service_name = 'Oracle'
 

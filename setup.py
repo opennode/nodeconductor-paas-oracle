@@ -29,7 +29,7 @@ setup(
     },
     entry_points={
         'nodeconductor_extensions': (
-            'oracle_paas = oracle_paas.extension:OracleExtension',
+            'oracle_paas = nodeconductor_paas_oracle.extension:OracleExtension',
         ),
     },
     include_package_data=True,
