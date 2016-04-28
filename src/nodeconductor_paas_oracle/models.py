@@ -28,6 +28,23 @@ class Flavor(structure_models.GeneralServiceProperty):
 
 class Deployment(structure_models.Resource):
 
+    class Type:
+        RAC = 1
+        ASM = 2
+        SINGLE = 3
+
+        CHOICES = (
+            (RAC, 'RAC'),
+            (ASM, 'Single Instance/ASM'),
+            (SINGLE, 'Single Instance'),
+        )
+
+    class Version:
+        V11 = '11.2.0.4'
+        V12 = '12.1.0.2'
+
+        CHOICES = ((V11, V11), (V12, V12))
+
     service_project_link = models.ForeignKey(
         OracleServiceProjectLink, related_name='deployments', on_delete=models.PROTECT)
 
@@ -37,11 +54,15 @@ class Deployment(structure_models.Resource):
     report = models.TextField(blank=True)
     db_name = models.CharField(max_length=256)
     db_size = models.PositiveIntegerField(help_text='Storage size in GB')
-    db_type = models.CharField(max_length=256)
-    db_version = models.CharField(max_length=256)
+    db_type = models.PositiveSmallIntegerField(choices=Type.CHOICES)
+    db_version = models.CharField(max_length=256, choices=Version.CHOICES)
     db_template = models.CharField(max_length=256)
     db_charset = models.CharField(max_length=256)
     user_data = models.TextField(blank=True)
+
+    @property
+    def db_version_type(self):
+        return "%s %s" % (self.db_version, self.get_db_type_display())
 
     @property
     def flavor_info(self):
