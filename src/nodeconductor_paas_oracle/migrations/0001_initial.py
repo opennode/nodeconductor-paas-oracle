@@ -70,7 +70,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('project', models.ForeignKey(to='structure.Project')),
-                ('service', models.ForeignKey(to='oracle_paas.OracleService')),
+                ('service', models.ForeignKey(to='nodeconductor_paas_oracle.OracleService')),
             ],
             options={
                 'abstract': False,
@@ -80,7 +80,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='oracleservice',
             name='projects',
-            field=models.ManyToManyField(related_name='oracle_services', through='oracle_paas.OracleServiceProjectLink', to='structure.Project'),
+            field=models.ManyToManyField(related_name='oracle_services', through='nodeconductor_paas_oracle.OracleServiceProjectLink', to='structure.Project'),
         ),
         migrations.AddField(
             model_name='oracleservice',
@@ -90,7 +90,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='deployment',
             name='service_project_link',
-            field=models.ForeignKey(related_name='deployments', on_delete=django.db.models.deletion.PROTECT, to='oracle_paas.OracleServiceProjectLink'),
+            field=models.ForeignKey(related_name='deployments', on_delete=django.db.models.deletion.PROTECT, to='nodeconductor_paas_oracle.OracleServiceProjectLink'),
         ),
         migrations.AddField(
             model_name='deployment',

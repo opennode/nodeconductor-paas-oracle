@@ -70,7 +70,7 @@ class OracleExtension(NodeConductorExtension):
 
     @staticmethod
     def django_app():
-        return 'oracle_paas'
+        return 'nodeconductor_paas_oracle'
 
     @staticmethod
     def rest_urls():
