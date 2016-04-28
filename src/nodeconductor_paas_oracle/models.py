@@ -20,6 +20,12 @@ class OracleServiceProjectLink(structure_models.ServiceProjectLink):
         return 'oracle-spl'
 
 
+class Flavor(structure_models.GeneralServiceProperty):
+    cores = models.PositiveSmallIntegerField(help_text='Number of cores in a VM')
+    ram = models.PositiveIntegerField(help_text='Memory size in MiB')
+    disk = models.PositiveIntegerField(help_text='Root disk size in MiB')
+
+
 class Deployment(structure_models.Resource):
 
     service_project_link = models.ForeignKey(
@@ -27,7 +33,7 @@ class Deployment(structure_models.Resource):
 
     support_request = models.ForeignKey('nodeconductor_jira.Issue', related_name='+', null=True)
     tenant = models.ForeignKey('openstack.Tenant', related_name='+')
-    flavor = models.ForeignKey('openstack.Flavor', related_name='+')
+    flavor = models.ForeignKey(Flavor, related_name='+')
     report = models.TextField(blank=True)
     db_name = models.CharField(max_length=256)
     db_size = models.PositiveIntegerField(help_text='Storage size in GB')
