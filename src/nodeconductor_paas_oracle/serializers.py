@@ -27,6 +27,17 @@ class ServiceProjectLinkSerializer(structure_serializers.BaseServiceProjectLinkS
         }
 
 
+class FlavorSerializer(structure_serializers.BasePropertySerializer):
+
+    class Meta(object):
+        model = models.Flavor
+        view_name = 'oracle-flavors-detail'
+        fields = ('url', 'uuid', 'name', 'cores', 'ram', 'disk')
+        extra_kwargs = {
+            'url': {'lookup_field': 'uuid'},
+        }
+
+
 class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
 
     service = serializers.HyperlinkedRelatedField(
@@ -48,7 +59,7 @@ class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
     flavor = serializers.HyperlinkedRelatedField(
         view_name='openstack-flavor-detail',
         lookup_field='uuid',
-        queryset=openstack_models.Flavor.objects.all(),
+        queryset=models.Flavor.objects.all(),
         write_only=True)
 
     support_request = serializers.HyperlinkedRelatedField(
@@ -100,7 +111,7 @@ class DeploymentResizeSerializer(structure_serializers.PermissionFieldFilteringM
     flavor = serializers.HyperlinkedRelatedField(
         view_name='openstack-flavor-detail',
         lookup_field='uuid',
-        queryset=openstack_models.Flavor.objects.all(),
+        queryset=models.Flavor.objects.all(),
         write_only=True)
 
     def get_fields(self):

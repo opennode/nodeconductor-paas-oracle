@@ -31,6 +31,12 @@ class OracleServiceProjectLinkViewSet(structure_views.BaseServiceProjectLinkView
     serializer_class = serializers.ServiceProjectLinkSerializer
 
 
+class FlavorViewSet(structure_views.BaseServicePropertyViewSet):
+    queryset = models.Flavor.objects.order_by('cores', 'ram', 'disk')
+    serializer_class = serializers.FlavorSerializer
+    lookup_field = 'uuid'
+
+
 class DeploymentViewSet(structure_views.BaseResourceViewSet):
     queryset = models.Deployment.objects.all()
     serializer_class = serializers.DeploymentSerializer
