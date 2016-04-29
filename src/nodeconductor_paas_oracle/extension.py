@@ -36,34 +36,30 @@ class OracleExtension(NodeConductorExtension):
             'undeploy': {
                 'summary': "Request for removing Oracle DB PaaS instance",
                 'details': """
-                    Oracle DB details
-
+                    Oracle DB details:
                     Name: {deployment.name}
                     UUID: {deployment.uuid.hex}
-                    Customer name: {customer.name}
-                    Project name: {project.project_group.name}
-                    Environment name: {project.name}
-                    Customer UUID: {customer.uuid.hex}
-                    Project UUID: {project.project_group.uuid.hex}
-                    Environment UUID: {project.uuid.hex}
                 """,
             },
             'resize': {
                 'summary': "Request for resizing Oracle DB PaaS instance",
                 'details': """
-                    Oracle DB details
-
+                    Oracle DB details:
                     Name: {deployment.name}
                     UUID: {deployment.uuid.hex}
-                    Customer name: {customer.name}
-                    Project name: {project.project_group.name}
-                    Environment name: {project.name}
-                    Customer UUID: {customer.uuid.hex}
-                    Project UUID: {project.project_group.uuid.hex}
-                    Environment UUID: {project.uuid.hex}
 
                     Hardware Configuration:
                     Flavor: {deployment.flavor_info}
+                """,
+            },
+            'support': {
+                'summary': "Custom support request",
+                'details': """
+                    {message}
+
+                    Oracle DB details:
+                    Name: {deployment.name}
+                    UUID: {deployment.uuid.hex}
                 """,
             },
         }

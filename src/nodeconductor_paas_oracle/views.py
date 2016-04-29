@@ -44,6 +44,8 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
     def get_serializer_class(self):
         if self.action == 'resize':
             return serializers.DeploymentResizeSerializer
+        elif self.action == 'support':
+            return serializers.SupportSerializer
         return super(DeploymentViewSet, self).get_serializer_class()
 
     def perform_provision(self, serializer):
@@ -86,9 +88,33 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
             resource.start_time = timezone.now()
             resource.set_online()
             resource.save(update_fields=['state'])
-            return response.Response({'detail': "Provision complete"}, status=status.HTTP_200_OK)
+            return response.Response({'detail': "Provision complete"})
         else:
             return response.Response({'detail': "Empty report"}, status=status.HTTP_400_BAD_REQUEST)
+
+    @structure_views.safe_operation(valid_state=models.Deployment.States.ONLINE)
+    @track_exceptions
+    def support(self, request, resource, uuid=None):
+        """ File custom support request.
+
+            .. code-block:: http
+
+                POST /api/oracle-deployments/a04a26e46def4724a0841abcb81926ac/support/ HTTP/1.1
+                Content-Type: application/json
+                Accept: application/json
+                Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+                Host: example.com
+
+                {
+                    "message": "Could you make that DB running faster?\n\nThanks."
+                }
+        """
+
+        serializer = self.get_serializer(resource, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        backend = resource.get_backend()
+        backend.support_request(resource, self.request, serializer.validated_data['message'])
+        return response.Response({'detail': "Support request accepted"})
 
     @decorators.detail_route(methods=['post'])
     @structure_views.safe_operation(valid_state=(models.Deployment.States.ONLINE, models.Deployment.States.RESIZING))
@@ -115,7 +141,7 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
                 raise exceptions.PermissionDenied
             resource.set_resized()
             resource.save(update_fields=['state'])
-            return response.Response({'detail': "Resizing complete"}, status=status.HTTP_200_OK)
+            return response.Response({'detail': "Resizing complete"})
 
         serializer = self.get_serializer(resource, data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -129,7 +155,7 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
 
         resource.begin_resizing()
         resource.save(update_fields=['state'])
-        return response.Response({'detail': "Resizing scheduled"}, status=status.HTTP_200_OK)
+        return response.Response({'detail': "Resizing scheduled"})
 
     @structure_views.safe_operation(valid_state=(models.Deployment.States.ONLINE, models.Deployment.States.DELETING))
     @track_exceptions
@@ -142,7 +168,7 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
             if not self.request.user.is_staff:
                 raise exceptions.PermissionDenied
             self.perform_destroy(resource)
-            return response.Response({'detail': "Deployment deleted"}, status=status.HTTP_200_OK)
+            return response.Response({'detail': "Deployment deleted"})
 
         resource.state = resource.States.DELETION_SCHEDULED
         resource.save(update_fields=['state'])
@@ -152,4 +178,4 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
 
         resource.begin_deleting()
         resource.save(update_fields=['state'])
-        return response.Response({'detail': "Deletion scheduled"}, status=status.HTTP_200_OK)
+        return response.Response({'detail': "Deletion scheduled"})
