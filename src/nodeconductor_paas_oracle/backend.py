@@ -60,14 +60,17 @@ class OracleBackend(ServiceBackend):
     def resize(self, deployment, request):
         self._support_request('resize', deployment, request)
 
-    def _support_request(self, name, deployment, request):
+    def support_request(self, deployment, request, message):
+        self._support_request('support', deployment, request, message=message)
+
+    def _support_request(self, name, deployment, request, **kwargs):
         issue = reverse('jira-issues-detail', kwargs={'uuid': deployment.support_request.uuid.hex})
         self._jira_request(
             'jira-comments-list',
             request,
             data={
                 "issue": issue,
-                "message": self._compile_message(deployment, name),
+                "message": self._compile_message(deployment, name, add_title=True, **kwargs),
             },
             error_message="Can't add JIRA comment")
 

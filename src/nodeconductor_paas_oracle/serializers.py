@@ -131,3 +131,7 @@ class DeploymentResizeSerializer(structure_serializers.PermissionFieldFilteringM
                 raise serializers.ValidationError(
                     "New flavor is not within the same service settings")
         return value
+
+
+class SupportSerializer(serializers.Serializer):
+    message = serializers.CharField()
