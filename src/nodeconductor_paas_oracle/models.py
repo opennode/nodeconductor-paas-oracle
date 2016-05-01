@@ -20,7 +20,7 @@ class OracleServiceProjectLink(structure_models.ServiceProjectLink):
         return 'oracle-spl'
 
 
-class Flavor(structure_models.GeneralServiceProperty):
+class Flavor(structure_models.BaseServiceProperty):
     cores = models.PositiveSmallIntegerField(help_text='Number of cores in a VM')
     ram = models.PositiveIntegerField(help_text='Memory size in MiB')
     disk = models.PositiveIntegerField(help_text='Root disk size in MiB')
