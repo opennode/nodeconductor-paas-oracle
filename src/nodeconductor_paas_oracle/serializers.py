@@ -100,9 +100,6 @@ class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
         if attrs['service_project_link'].project != attrs['tenant'].service_project_link.project:
             raise serializers.ValidationError({'tenant': "Tenant and deployment projects don't match"})
 
-        if attrs['tenant'].service_project_link.service.settings != attrs['flavor'].settings:
-            raise serializers.ValidationError({'tenant': "Flavor doesn't match tenant"})
-
         return attrs
 
 
