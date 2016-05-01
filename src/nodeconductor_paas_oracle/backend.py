@@ -35,7 +35,7 @@ class OracleBackend(ServiceBackend):
             raise OracleBackendError("Can't find JIRA project '%s'" % self.settings.token)
 
     def provision(self, deployment, request, ssh_key=None):
-        # create fake and empty SshKey instance for string formating
+        # create fake and empty SshKey instance for string formatting
         if not ssh_key:
             ssh_key = type('SshKey', (object,), {'name': '', 'uuid': type('UUID', (object,), {'hex': ''})})
 

@@ -122,13 +122,6 @@ class DeploymentResizeSerializer(structure_serializers.PermissionFieldFilteringM
     def get_filtered_field_names(self):
         return 'flavor',
 
-    def validate_flavor(self, value):
-        if value is not None:
-            if value.settings != self.instance.tenant.service_project_link.service.settings:
-                raise serializers.ValidationError(
-                    "New flavor is not within the same service settings")
-        return value
-
 
 class SupportSerializer(serializers.Serializer):
     message = serializers.CharField()
