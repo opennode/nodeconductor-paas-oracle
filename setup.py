@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 from setuptools import setup, find_packages
 
 
@@ -12,13 +13,30 @@ install_requires = [
 ]
 
 
+# RPM installation does not need oslo, cliff and stevedore libs -
+# they are required only for installation with setuptools
+try:
+    action = sys.argv[1]
+except IndexError:
+    pass
+else:
+    if action in ['develop', 'install', 'test', 'bdist_egg']:
+        install_requires += [
+            'cliff==1.7.0',
+            'oslo.config==1.4.0',
+            'oslo.i18n==1.0.0',
+            'oslo.utils==1.0.0',
+            'stevedore==1.0.0',
+        ]
+
+
 setup(
     name='nodeconductor-paas-oracle',
     version='0.1.0',
     author='OpenNode Team',
     author_email='info@opennodecloud.com',
     url='http://nodeconductor.com',
-    description='Plugin for custom Oracle PaaS',
+    description='Plugin for custom Oracle PaaS solution.',
     long_description=open('README.rst').read(),
     package_dir={'': 'src'},
     packages=find_packages('src', exclude=['*.tests', '*.tests.*', 'tests.*', 'tests']),
