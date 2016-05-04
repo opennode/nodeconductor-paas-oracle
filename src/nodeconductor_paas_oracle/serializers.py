@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from nodeconductor.core import models as core_models
+from nodeconductor.core import serializers as core_serializers
 from nodeconductor.openstack import models as openstack_models
 from nodeconductor.structure import serializers as structure_serializers
 
@@ -38,6 +39,12 @@ class FlavorSerializer(structure_serializers.BasePropertySerializer):
         }
 
 
+class NestedFlavorSerializer(core_serializers.HyperlinkedRelatedModelSerializer, FlavorSerializer):
+
+    class Meta(FlavorSerializer.Meta):
+        pass
+
+
 class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
 
     service = serializers.HyperlinkedRelatedField(
@@ -56,11 +63,9 @@ class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
         queryset=openstack_models.Tenant.objects.all(),
         write_only=True)
 
-    flavor = serializers.HyperlinkedRelatedField(
-        view_name='openstack-flavor-detail',
-        lookup_field='uuid',
+    flavor = NestedFlavorSerializer(
         queryset=models.Flavor.objects.all(),
-        write_only=True)
+    )
 
     support_request = serializers.HyperlinkedRelatedField(
         view_name='jira-issues-detail',
