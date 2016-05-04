@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from nodeconductor.core import models as core_models
 from nodeconductor.core import serializers as core_serializers
+from nodeconductor.core.fields import NaturalChoiceField
 from nodeconductor.openstack import models as openstack_models
 from nodeconductor.structure import serializers as structure_serializers
 
@@ -63,9 +64,11 @@ class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
         queryset=openstack_models.Tenant.objects.all(),
         write_only=True)
 
-    flavor = NestedFlavorSerializer(
+    flavor = serializers.HyperlinkedRelatedField(
+        view_name='openstack-flavor-detail',
+        lookup_field='uuid',
         queryset=models.Flavor.objects.all(),
-    )
+        write_only=True)
 
     support_request = serializers.HyperlinkedRelatedField(
         view_name='jira-issues-detail',
@@ -78,6 +81,8 @@ class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
         queryset=core_models.SshPublicKey.objects.all(),
         required=False,
         write_only=True)
+
+    db_type = NaturalChoiceField(choices=models.Deployment.Type.CHOICES)
 
     class Meta(structure_serializers.BaseResourceSerializer.Meta):
         model = models.Deployment
@@ -99,6 +104,8 @@ class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
         fields = super(DeploymentSerializer, self).get_fields()
         fields['ssh_public_key'].queryset = fields['ssh_public_key'].queryset.filter(
             user=self.context['request'].user)
+        if self.instance:
+            fields['flavor'] = NestedFlavorSerializer(queryset=models.Flavor.objects.all())
         return fields
 
     def validate(self, attrs):
