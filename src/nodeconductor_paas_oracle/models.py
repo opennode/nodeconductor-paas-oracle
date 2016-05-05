@@ -28,6 +28,19 @@ class Flavor(structure_models.BaseServiceProperty):
 
 class Deployment(structure_models.Resource):
 
+    class Charset:
+        AL32UTF8 = 'AL32UTF8 - Unicode UTF-8 Universal Character Set'
+        AR8ISO8859P6 = 'AR8ISO8859P6 - ISO 8859-6 Latin/Arabic'
+        AR8MSWIN1256 = 'AR8MSWIN1256 - MS Windows Code Page 1256 8-Bit Latin/Arabic'
+        OTHER = 'Other - please specify in Addtional Data field.'
+
+        CHOICES = (
+            (AL32UTF8, AL32UTF8),
+            (AR8ISO8859P6, AR8ISO8859P6),
+            (AR8MSWIN1256, AR8MSWIN1256),
+            (OTHER, OTHER),
+        )
+
     class Type:
         RAC = 1
         ASM = 2
@@ -37,6 +50,15 @@ class Deployment(structure_models.Resource):
             (RAC, 'RAC'),
             (ASM, 'Single Instance/ASM'),
             (SINGLE, 'Single Instance'),
+        )
+
+    class Template:
+        GENERAL = 'General Purpose'
+        WAREHOUSE = 'Data Warehouse'
+
+        CHOICES = (
+            (GENERAL, GENERAL),
+            (WAREHOUSE, WAREHOUSE),
         )
 
     class Version:
@@ -56,8 +78,8 @@ class Deployment(structure_models.Resource):
     db_size = models.PositiveIntegerField(help_text='Storage size in GB')
     db_type = models.PositiveSmallIntegerField(choices=Type.CHOICES)
     db_version = models.CharField(max_length=256, choices=Version.CHOICES)
-    db_template = models.CharField(max_length=256)
-    db_charset = models.CharField(max_length=256)
+    db_template = models.CharField(max_length=256, choices=Template.CHOICES)
+    db_charset = models.CharField(max_length=256, choices=Charset.CHOICES)
     user_data = models.TextField(blank=True)
 
     @property
