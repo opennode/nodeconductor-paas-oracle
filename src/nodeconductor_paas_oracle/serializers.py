@@ -65,7 +65,7 @@ class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
         write_only=True)
 
     flavor = serializers.HyperlinkedRelatedField(
-        view_name='openstack-flavor-detail',
+        view_name='oracle-flavors-detail',
         lookup_field='uuid',
         queryset=models.Flavor.objects.all(),
         write_only=True)
