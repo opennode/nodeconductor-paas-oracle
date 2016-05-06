@@ -20,7 +20,8 @@ class OracleProvisionTemplateForm(ResourceTemplateForm):
     ssh_public_key = forms.ModelChoiceField(
         label="SSH public key", queryset=core_models.SshPublicKey.objects.all(), required=False)
 
-    db_size = forms.IntegerField(label='Data volume size', required=False)
+    db_size = forms.IntegerField(label='Data storage size', required=False)
+    db_arch_size = forms.IntegerField(label='Archive storage size', required=False)
     db_type = forms.CharField(required=False)
     db_version = forms.CharField(required=False)
     db_template = forms.CharField(required=False)
@@ -30,7 +31,7 @@ class OracleProvisionTemplateForm(ResourceTemplateForm):
     class Meta(ResourceTemplateForm.Meta):
         fields = ResourceTemplateForm.Meta.fields + (
             'service', 'project', 'flavor', 'tenant',
-            'db_size', 'db_type', 'db_version', 'db_template', 'db_charset',
+            'db_size', 'db_arch_size', 'db_type', 'db_version', 'db_template', 'db_charset',
         )
 
     class Serializer(BaseResourceTemplateSerializer):
@@ -59,6 +60,7 @@ class OracleProvisionTemplateForm(ResourceTemplateForm):
             required=False,
         )
         db_size = serializers.IntegerField(required=False)
+        db_arch_size = serializers.IntegerField(required=False)
         db_type = serializers.CharField(required=False)
         db_version = serializers.CharField(required=False)
         db_template = serializers.CharField(required=False)

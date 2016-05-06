@@ -89,12 +89,12 @@ class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
         view_name = 'oracle-deployments-detail'
         fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
             'tenant', 'flavor', 'ssh_public_key', 'support_request',
-            'db_name', 'db_size', 'db_type', 'db_version', 'db_template', 'db_charset',
+            'db_name', 'db_size', 'db_arch_size', 'db_type', 'db_version', 'db_template', 'db_charset',
             'user_data', 'report',
         )
         protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (
             'tenant', 'flavor', 'user_data', 'ssh_public_key',
-            'db_name', 'db_size', 'db_type', 'db_version', 'db_template', 'db_charset',
+            'db_name', 'db_size', 'db_arch_size', 'db_type', 'db_version', 'db_template', 'db_charset',
         )
         read_only_fields = structure_serializers.BaseResourceSerializer.Meta.read_only_fields + (
             'support_request', 'report',

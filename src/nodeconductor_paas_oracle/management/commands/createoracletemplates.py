@@ -111,7 +111,8 @@ class Command(BaseCommand):
                 options['tenant'] = self.get_obj_url('openstack-tenant-detail', tenant)
                 break
 
-        options['db_size'] = self.input_int('Database size, GB [20]: ', 20)
+        options['db_size'] = self.input_int('Data storage size, GB [10]: ', 10)
+        options['db_arch_size'] = self.input_int('Archive storage size, GB [10]: ', 10)
         options['db_type'] = self.input_choice('database type', Deployment.Type.CHOICES)
         options['db_version'] = self.input_choice('database version', Deployment.Version.CHOICES)
         options['db_template'] = self.input_choice('database template', Deployment.Template.CHOICES)

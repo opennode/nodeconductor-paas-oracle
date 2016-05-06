@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 from nodeconductor.structure import models as structure_models
 
@@ -75,7 +76,10 @@ class Deployment(structure_models.Resource):
     flavor = models.ForeignKey(Flavor, related_name='+')
     report = models.TextField(blank=True)
     db_name = models.CharField(max_length=256)
-    db_size = models.PositiveIntegerField(help_text='Storage size in GB')
+    db_size = models.PositiveIntegerField(
+        validators=[MinValueValidator(10), MaxValueValidator(2048)], help_text='Data storage size in GB')
+    db_arch_size = models.PositiveIntegerField(
+        validators=[MinValueValidator(10), MaxValueValidator(2048)], help_text='Archive storage size in GB')
     db_type = models.PositiveSmallIntegerField(choices=Type.CHOICES)
     db_version = models.CharField(max_length=256, choices=Version.CHOICES)
     db_template = models.CharField(max_length=256, choices=Template.CHOICES)
