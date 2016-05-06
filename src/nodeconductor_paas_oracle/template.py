@@ -47,7 +47,7 @@ class OracleProvisionTemplateForm(ResourceTemplateForm):
             queryset=models.Flavor.objects.all(),
             required=False,
         )
-        image = serializers.HyperlinkedRelatedField(
+        tenant = serializers.HyperlinkedRelatedField(
             view_name='openstack-tenant-detail',
             lookup_field='uuid',
             queryset=Tenant.objects.all(),
