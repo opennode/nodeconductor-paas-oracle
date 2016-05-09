@@ -90,14 +90,14 @@ class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
         fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
             'tenant', 'flavor', 'ssh_public_key', 'support_request',
             'db_name', 'db_size', 'db_arch_size', 'db_type', 'db_version', 'db_template', 'db_charset',
-            'user_data', 'report',
+            'user_data', 'report', 'key_name', 'key_fingerprint',
         )
         protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (
             'tenant', 'flavor', 'user_data', 'ssh_public_key',
             'db_name', 'db_size', 'db_arch_size', 'db_type', 'db_version', 'db_template', 'db_charset',
         )
         read_only_fields = structure_serializers.BaseResourceSerializer.Meta.read_only_fields + (
-            'support_request', 'report',
+            'support_request', 'report', 'key_name', 'key_fingerprint',
         )
 
     def get_fields(self):
@@ -113,6 +113,14 @@ class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
             raise serializers.ValidationError({'tenant': "Tenant and deployment projects don't match"})
 
         return attrs
+
+    def create(self, validated_data):
+        ssh_key = validated_data.pop('ssh_public_key', None)
+        if ssh_key:
+            validated_data['key_name'] = ssh_key.name
+            validated_data['key_fingerprint'] = ssh_key.fingerprint
+
+        return super(DeploymentSerializer, self).create(validated_data)
 
 
 class DeploymentResizeSerializer(structure_serializers.PermissionFieldFilteringMixin, serializers.Serializer):
