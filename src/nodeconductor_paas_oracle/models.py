@@ -85,6 +85,9 @@ class Deployment(structure_models.Resource):
     db_template = models.CharField(max_length=256, choices=Template.CHOICES)
     db_charset = models.CharField(max_length=256, choices=Charset.CHOICES)
     user_data = models.TextField(blank=True)
+    # preserve initial key data
+    key_name = models.CharField(max_length=50, blank=True)
+    key_fingerprint = models.CharField(max_length=47, blank=True)
 
     @property
     def db_version_type(self):
