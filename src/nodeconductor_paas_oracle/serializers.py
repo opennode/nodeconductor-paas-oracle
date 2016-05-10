@@ -102,8 +102,9 @@ class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
 
     def get_fields(self):
         fields = super(DeploymentSerializer, self).get_fields()
-        fields['ssh_public_key'].queryset = fields['ssh_public_key'].queryset.filter(
-            user=self.context['request'].user)
+        if 'ssh_public_key' in fields:
+            fields['ssh_public_key'].queryset = fields['ssh_public_key'].queryset.filter(
+                user=self.context['request'].user)
         if self.instance:
             fields['flavor'] = NestedFlavorSerializer(read_only=True)
         return fields
