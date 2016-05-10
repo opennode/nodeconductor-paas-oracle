@@ -60,6 +60,15 @@ class OracleBackend(ServiceBackend):
     def resize(self, deployment, request):
         self._support_request('resize', deployment, request)
 
+    def stop(self, deployment, request, message="Request for stopping Oracle DB PaaS instance"):
+        self._support_request('support', deployment, request, message=message)
+
+    def start(self, deployment, request, message="Request for starting Oracle DB PaaS instance"):
+        self._support_request('support', deployment, request, message=message)
+
+    def restart(self, deployment, request, message="Request for restarting Oracle DB PaaS instance"):
+        self._support_request('support', deployment, request, message=message)
+
     def support_request(self, deployment, request, message):
         self._support_request('support', deployment, request, message=message)
 

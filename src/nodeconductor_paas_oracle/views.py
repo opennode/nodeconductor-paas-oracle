@@ -8,6 +8,9 @@ from . import models, serializers
 from .backend import OracleBackendError
 
 
+States = models.Deployment.States
+
+
 def track_exceptions(view_fn):
     @wraps(view_fn)
     def wrapped(self, request, resource, *args, **kwargs):
@@ -65,7 +68,7 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         resource.save(update_fields=['state'])
 
     @decorators.detail_route(methods=['post'])
-    @structure_views.safe_operation(valid_state=models.Deployment.States.PROVISIONING)
+    @structure_views.safe_operation(valid_state=States.PROVISIONING)
     def provision(self, request, resource, uuid=None):
         """ Complete provisioning. Example:
 
@@ -83,16 +86,43 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         """
         report = request.data.get('report')
         if report:
-            resource = self.get_object()
             resource.report = report
             resource.start_time = timezone.now()
             resource.set_online()
-            resource.save(update_fields=['state'])
+            resource.save(update_fields=['report', 'start_time', 'state'])
             return response.Response({'detail': "Provision complete"})
         else:
             return response.Response({'detail': "Empty report"}, status=status.HTTP_400_BAD_REQUEST)
 
-    @structure_views.safe_operation(valid_state=models.Deployment.States.ONLINE)
+    @decorators.detail_route(methods=['post'])
+    @structure_views.safe_operation()
+    def update_report(self, request, resource, uuid=None):
+        """ Update provisioning report. Example:
+
+            .. code-block:: http
+
+                POST /api/oracle-deployments/a04a26e46def4724a0841abcb81926ac/update_report/ HTTP/1.1
+                Content-Type: application/json
+                Accept: application/json
+                Authorization: Token c84d653b9ec92c6cbac41c706593e66f567a7fa4
+                Host: example.com
+
+                {
+                    "report": "ORACONF=TST12DB\n\nDBTYPE=single\nDBNAME='PRD12DB'"
+                }
+        """
+        if not self.request.user.is_staff:
+            raise exceptions.PermissionDenied
+
+        report = request.data.get('report')
+        if report:
+            resource.report = report
+            resource.save(update_fields=['report'])
+            return response.Response({'detail': "Report has been updated"})
+        else:
+            return response.Response({'detail': "Empty report"}, status=status.HTTP_400_BAD_REQUEST)
+
+    @structure_views.safe_operation(valid_state=States.ONLINE)
     @track_exceptions
     def support(self, request, resource, uuid=None):
         """ File custom support request.
@@ -117,7 +147,7 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         return response.Response({'detail': "Support request accepted"})
 
     @decorators.detail_route(methods=['post'])
-    @structure_views.safe_operation(valid_state=(models.Deployment.States.ONLINE, models.Deployment.States.RESIZING))
+    @structure_views.safe_operation(valid_state=(States.ONLINE, States.RESIZING))
     def resize(self, request, resource, uuid=None):
         """ Request for DB Instance resize. Example:
 
@@ -136,7 +166,7 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
             To confirm resize complete issue an empty post to the same endpoint.
         """
 
-        if resource.state == resource.States.RESIZING:
+        if resource.state == States.RESIZING:
             if not self.request.user.is_staff:
                 raise exceptions.PermissionDenied
             resource.set_resized()
@@ -146,7 +176,7 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         serializer = self.get_serializer(resource, data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        resource.state = resource.States.RESIZING_SCHEDULED
+        resource.state = States.RESIZING_SCHEDULED
         resource.flavor = serializer.validated_data.get('flavor')
         resource.save(update_fields=['flavor', 'state'])
 
@@ -157,20 +187,20 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         resource.save(update_fields=['state'])
         return response.Response({'detail': "Resizing scheduled"})
 
-    @structure_views.safe_operation(valid_state=(models.Deployment.States.ONLINE, models.Deployment.States.DELETING))
+    @structure_views.safe_operation(valid_state=(States.OFFLINE, States.DELETING))
     @track_exceptions
     def destroy(self, request, resource, uuid=None):
         """ Request for DB Instance deletion or confirm deletion success.
             A proper action will be taken depending on the current deployment state.
         """
 
-        if resource.state == resource.States.DELETING:
+        if resource.state == States.DELETING:
             if not self.request.user.is_staff:
                 raise exceptions.PermissionDenied
             self.perform_destroy(resource)
             return response.Response({'detail': "Deployment deleted"})
 
-        resource.state = resource.States.DELETION_SCHEDULED
+        resource.schedule_deletion()
         resource.save(update_fields=['state'])
 
         backend = resource.get_backend()
@@ -179,3 +209,78 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         resource.begin_deleting()
         resource.save(update_fields=['state'])
         return response.Response({'detail': "Deletion scheduled"})
+
+    @decorators.detail_route(methods=['post'])
+    @structure_views.safe_operation(valid_state=(States.OFFLINE, States.STARTING))
+    def start(self, request, resource, uuid=None):
+        """ Request for DB Instance starting or confirm starting success.
+            A proper action will be taken depending on the current deployment state.
+        """
+
+        if resource.state == States.STARTING:
+            if not self.request.user.is_staff:
+                raise exceptions.PermissionDenied
+            else:
+                resource.set_online()
+                resource.save(update_fields=['state'])
+                return response.Response({'detail': "Deployment started"})
+
+        resource.schedule_starting()
+        resource.save(update_fields=['state'])
+
+        backend = resource.get_backend()
+        backend.start(resource, self.request)
+
+        resource.begin_starting()
+        resource.save(update_fields=['state'])
+        return response.Response({'detail': "Starting scheduled"})
+
+    @decorators.detail_route(methods=['post'])
+    @structure_views.safe_operation(valid_state=(States.ONLINE, States.STOPPING))
+    def stop(self, request, resource, uuid=None):
+        """ Request for DB Instance stopping or confirm stopping success.
+            A proper action will be taken depending on the current deployment state.
+        """
+
+        if resource.state == States.STOPPING:
+            if not self.request.user.is_staff:
+                raise exceptions.PermissionDenied
+            else:
+                resource.set_offline()
+                resource.save(update_fields=['state'])
+                return response.Response({'detail': "Deployment stopped"})
+
+        resource.schedule_stopping()
+        resource.save(update_fields=['state'])
+
+        backend = resource.get_backend()
+        backend.stop(resource, self.request)
+
+        resource.begin_stopping()
+        resource.save(update_fields=['state'])
+        return response.Response({'detail': "Stopping scheduled"})
+
+    @decorators.detail_route(methods=['post'])
+    @structure_views.safe_operation(valid_state=(States.ONLINE, States.RESTARTING))
+    def restart(self, request, resource, uuid=None):
+        """ Request for DB Instance restarting or confirm restarting success.
+            A proper action will be taken depending on the current deployment state.
+        """
+
+        if resource.state == States.RESTARTING:
+            if not self.request.user.is_staff:
+                raise exceptions.PermissionDenied
+            else:
+                resource.set_online()
+                resource.save(update_fields=['state'])
+                return response.Response({'detail': "Deployment restarted"})
+
+        resource.schedule_restarting()
+        resource.save(update_fields=['state'])
+
+        backend = resource.get_backend()
+        backend.restart(resource, self.request)
+
+        resource.begin_restarting()
+        resource.save(update_fields=['state'])
+        return response.Response({'detail': "Restarting scheduled"})
