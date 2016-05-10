@@ -160,10 +160,10 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
                 Host: example.com
 
                 {
-                    "flavor": "http://example.com/api/openstack-flavors/ef86802458684056b18576a91daf7690/"
+                    "flavor": "http://example.com/api/oracle-flavors/ef86802458684056b18576a91daf7690/"
                 }
 
-            To confirm resize complete issue an empty post to the same endpoint.
+            To confirm resize completion, issue an empty POST request to the same endpoint.
         """
 
         if resource.state == States.RESIZING:

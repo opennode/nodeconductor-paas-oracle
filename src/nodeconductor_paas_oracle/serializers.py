@@ -124,24 +124,13 @@ class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
         return super(DeploymentSerializer, self).create(validated_data)
 
 
-class DeploymentResizeSerializer(structure_serializers.PermissionFieldFilteringMixin, serializers.Serializer):
+class DeploymentResizeSerializer(serializers.Serializer):
 
     flavor = serializers.HyperlinkedRelatedField(
-        view_name='openstack-flavor-detail',
+        view_name='oracle-flavors-detail',
         lookup_field='uuid',
         queryset=models.Flavor.objects.all(),
         write_only=True)
-
-    def get_fields(self):
-        fields = super(DeploymentResizeSerializer, self).get_fields()
-        if self.instance:
-            fields['flavor'].query_params = {
-                'settings_uuid': self.instance.service_project_link.service.settings.uuid
-            }
-        return fields
-
-    def get_filtered_field_names(self):
-        return 'flavor',
 
 
 class SupportSerializer(serializers.Serializer):
