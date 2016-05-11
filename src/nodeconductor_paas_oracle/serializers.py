@@ -3,8 +3,8 @@ from rest_framework import serializers
 from nodeconductor.core import models as core_models
 from nodeconductor.core import serializers as core_serializers
 from nodeconductor.core.fields import NaturalChoiceField
-from nodeconductor.openstack import models as openstack_models
 from nodeconductor.structure import serializers as structure_serializers
+from nodeconductor_openstack import models as openstack_models
 
 from . import models
 
