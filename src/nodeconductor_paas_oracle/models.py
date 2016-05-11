@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 from nodeconductor.structure import models as structure_models
+from nodeconductor.logging.loggers import LoggableMixin
 
 
 class OracleService(structure_models.Service):
@@ -27,7 +28,7 @@ class Flavor(structure_models.BaseServiceProperty):
     disk = models.PositiveIntegerField(help_text='Root disk size in MiB')
 
 
-class Deployment(structure_models.Resource):
+class Deployment(LoggableMixin, structure_models.Resource):
 
     class Charset:
         AL32UTF8 = 'AL32UTF8 - Unicode UTF-8 Universal Character Set'
@@ -106,3 +107,6 @@ class Deployment(structure_models.Resource):
     @classmethod
     def get_url_name(cls):
         return 'oracle-deployments'
+
+    def get_log_fields(self):
+        return super(Deployment, self).get_log_fields() + ('db_name',)
