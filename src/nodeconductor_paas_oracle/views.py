@@ -123,7 +123,7 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
             return response.Response({'detail': "Empty report"}, status=status.HTTP_400_BAD_REQUEST)
 
     @decorators.detail_route(methods=['post'])
-    @structure_views.safe_operation(valid_state=States.ONLINE)
+    @structure_views.safe_operation()
     @track_exceptions
     def support(self, request, resource, uuid=None):
         """ File custom support request.
