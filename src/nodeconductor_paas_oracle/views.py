@@ -3,6 +3,7 @@ from django.utils import timezone
 from rest_framework import decorators, exceptions, response, status
 
 from nodeconductor.structure import views as structure_views
+from log import event_logger
 
 from . import models, serializers
 from .backend import OracleBackendError
@@ -118,6 +119,13 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         if report:
             resource.report = report
             resource.save(update_fields=['report'])
+            event_logger.oracle_deployment.info(
+                'Oracle deployment {deployment_name} report has been updated.',
+                event_type='oracle_deployment_report_updated',
+                event_context={
+                    'deployment': self.get_object(),
+                }
+            )
             return response.Response({'detail': "Report has been updated"})
         else:
             return response.Response({'detail': "Empty report"}, status=status.HTTP_400_BAD_REQUEST)
@@ -145,6 +153,15 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         serializer.is_valid(raise_exception=True)
         backend = resource.get_backend()
         backend.support_request(resource, self.request, serializer.validated_data['message'])
+        # XXX: Switch this and below to a more standard resource_stop_scheduled / resource_stop_succeeded for ECC release
+        event_logger.oracle_deployment.info(
+            'Support for Oracle deployment {deployment_name} has been requested.',
+            event_type='oracle_deployment_support_requested',
+            event_context={
+                'deployment': self.get_object(),
+            }
+        )
+
         return response.Response({'detail': "Support request accepted"})
 
     @decorators.detail_route(methods=['post'])
@@ -172,6 +189,14 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
                 raise exceptions.PermissionDenied
             resource.set_resized()
             resource.save(update_fields=['state'])
+            event_logger.oracle_deployment.info(
+                'Resize request for Oracle deployment {deployment_name} has been fulfilled.',
+                event_type='oracle_deployment_resize_succeeded',
+                event_context={
+                    'deployment': resource,
+                }
+            )
+
             return response.Response({'detail': "Resizing complete"})
 
         serializer = self.get_serializer(resource, data=request.data)
@@ -186,6 +211,14 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
 
         resource.begin_resizing()
         resource.save(update_fields=['state'])
+        event_logger.oracle_deployment.info(
+            'Resize request for Oracle deployment {deployment_name} has been submitted.',
+            event_type='oracle_deployment_resize_requested',
+            event_context={
+                'deployment': resource,
+            }
+        )
+
         return response.Response({'detail': "Resizing scheduled"})
 
     @structure_views.safe_operation(valid_state=(States.OFFLINE, States.DELETING))
@@ -224,6 +257,13 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
             else:
                 resource.set_online()
                 resource.save(update_fields=['state'])
+                event_logger.oracle_deployment.info(
+                    'Start request for Oracle deployment {deployment_name} has been fulfilled.',
+                    event_type='oracle_deployment_start_succeeded',
+                    event_context={
+                        'deployment': resource,
+                    }
+                )
                 return response.Response({'detail': "Deployment started"})
 
         resource.schedule_starting()
@@ -234,6 +274,14 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
 
         resource.begin_starting()
         resource.save(update_fields=['state'])
+        event_logger.oracle_deployment.info(
+            'Start request for Oracle deployment {deployment_name} has been submitted.',
+            event_type='oracle_deployment_start_requested',
+            event_context={
+                'deployment': resource,
+            }
+        )
+
         return response.Response({'detail': "Starting scheduled"})
 
     @decorators.detail_route(methods=['post'])
@@ -249,6 +297,14 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
             else:
                 resource.set_offline()
                 resource.save(update_fields=['state'])
+                event_logger.oracle_deployment.info(
+                    'Stop request for Oracle deployment {deployment_name} has been fulfilled.',
+                    event_type='oracle_deployment_stop_succeeded',
+                    event_context={
+                        'deployment': resource,
+                    }
+                )
+
                 return response.Response({'detail': "Deployment stopped"})
 
         resource.schedule_stopping()
@@ -259,6 +315,14 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
 
         resource.begin_stopping()
         resource.save(update_fields=['state'])
+        event_logger.oracle_deployment.info(
+            'Stop request for Oracle deployment {deployment_name} has been submitted.',
+            event_type='oracle_deployment_stop_requested',
+            event_context={
+                'deployment': resource,
+            }
+        )
+
         return response.Response({'detail': "Stopping scheduled"})
 
     @decorators.detail_route(methods=['post'])
@@ -274,6 +338,14 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
             else:
                 resource.set_online()
                 resource.save(update_fields=['state'])
+                event_logger.oracle_deployment.info(
+                    'Restart request for Oracle deployment {deployment_name} has been fulfilled.',
+                    event_type='oracle_deployment_restart_succeeded',
+                    event_context={
+                        'deployment': resource,
+                    }
+                )
+
                 return response.Response({'detail': "Deployment restarted"})
 
         resource.schedule_restarting()
@@ -284,4 +356,12 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
 
         resource.begin_restarting()
         resource.save(update_fields=['state'])
+        event_logger.oracle_deployment.info(
+            'Restart request for Oracle deployment {deployment_name} has been submitted.',
+            event_type='oracle_deployment_restart_requested',
+            event_context={
+                'deployment': resource,
+            }
+        )
+
         return response.Response({'detail': "Restarting scheduled"})
