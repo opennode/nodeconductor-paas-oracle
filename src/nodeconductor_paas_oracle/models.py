@@ -28,7 +28,7 @@ class Flavor(structure_models.BaseServiceProperty):
     disk = models.PositiveIntegerField(help_text='Root disk size in MiB')
 
 
-class Deployment(structure_models.Resource, LoggableMixin):
+class Deployment(structure_models.Resource):
 
     class Charset:
         AL32UTF8 = 'AL32UTF8 - Unicode UTF-8 Universal Character Set'
