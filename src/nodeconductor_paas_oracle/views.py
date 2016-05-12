@@ -99,7 +99,7 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
                 'Oracle deployment {deployment_name} report has been updated.',
                 event_type='oracle_deployment_report_updated',
                 event_context={
-                    'deployment': self.resource,
+                    'deployment': resource,
                 }
             )
             return response.Response({'detail': "Provision complete"})
@@ -134,7 +134,7 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
                 'Oracle deployment {deployment_name} report has been updated.',
                 event_type='oracle_deployment_report_updated',
                 event_context={
-                    'deployment': self.resource,
+                    'deployment': resource,
                 }
             )
             return response.Response({'detail': "Report has been updated"})
