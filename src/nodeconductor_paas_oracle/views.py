@@ -17,7 +17,6 @@ def safe_operation(valid_state=None):
         @wraps(view_fn)
         def wrapped(self, request, *args, **kwargs):
             try:
-                print '!!', request
                 resource = self.get_object()
                 structure_views.check_operation(request.user, resource, view_fn.__name__, valid_state)
                 return view_fn(self, request, resource, *args, **kwargs)
