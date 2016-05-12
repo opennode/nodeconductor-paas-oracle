@@ -106,3 +106,6 @@ class Deployment(structure_models.Resource):
     @classmethod
     def get_url_name(cls):
         return 'oracle-deployments'
+
+    def get_log_fields(self):
+        return super(Deployment, self).get_log_fields() + ('db_name',)
