@@ -153,6 +153,7 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         serializer.is_valid(raise_exception=True)
         backend = resource.get_backend()
         backend.support_request(resource, self.request, serializer.validated_data['message'])
+        # XXX: Switch this and below to a more standard resource_stop_scheduled / resource_stop_succeeded for ECC release
         event_logger.oracle_deployment.info(
             'Support for Oracle deployment {deployment_name} has been requested.',
             event_type='oracle_deployment_support_requested',

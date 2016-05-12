@@ -2,7 +2,6 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 
 from nodeconductor.structure import models as structure_models
-from nodeconductor.logging.loggers import LoggableMixin
 
 
 class OracleService(structure_models.Service):
