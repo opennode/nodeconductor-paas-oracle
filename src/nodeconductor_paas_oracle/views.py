@@ -174,7 +174,7 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         )
 
         return response.Response(
-            {'detail': "Support request accepted", 'jira_issue_key': ticket.backend_id},
+            {'detail': "Support request accepted", 'jira_issue_uuid': ticket.uuid.hex},
             status=status.HTTP_202_ACCEPTED)
 
     @decorators.detail_route(methods=['post'])
@@ -233,7 +233,7 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         )
 
         return response.Response(
-            {'detail': "Resizing scheduled", 'jira_issue_key': ticket.backend_id},
+            {'detail': "Resizing scheduled", 'jira_issue_uuid': ticket.uuid.hex},
             status=status.HTTP_202_ACCEPTED)
 
     @safe_operation(valid_state=(States.OFFLINE, States.DELETING))
@@ -258,7 +258,7 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         resource.save(update_fields=['state'])
 
         return response.Response(
-            {'detail': "Deletion scheduled", 'jira_issue_key': ticket.backend_id},
+            {'detail': "Deletion scheduled", 'jira_issue_uuid': ticket.uuid.hex},
             status=status.HTTP_202_ACCEPTED)
 
     @decorators.detail_route(methods=['post'])
@@ -300,7 +300,7 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         )
 
         return response.Response(
-            {'detail': "Starting scheduled", 'jira_issue_key': ticket.backend_id},
+            {'detail': "Starting scheduled", 'jira_issue_uuid': ticket.uuid.hex},
             status=status.HTTP_202_ACCEPTED)
 
     @decorators.detail_route(methods=['post'])
@@ -343,7 +343,7 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         )
 
         return response.Response(
-            {'detail': "Stopping scheduled", 'jira_issue_key': ticket.backend_id},
+            {'detail': "Stopping scheduled", 'jira_issue_uuid': ticket.uuid.hex},
             status=status.HTTP_202_ACCEPTED)
 
     @decorators.detail_route(methods=['post'])
@@ -386,5 +386,5 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         )
 
         return response.Response(
-            {'detail': "Restarting scheduled", 'jira_issue_key': ticket.backend_id},
+            {'detail': "Restarting scheduled", 'jira_issue_uuid': ticket.uuid.hex},
             status=status.HTTP_202_ACCEPTED)
