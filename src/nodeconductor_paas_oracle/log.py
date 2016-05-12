@@ -1,9 +1,9 @@
 from nodeconductor.logging.loggers import EventLogger, event_logger
-from nodeconductor_saltstack.saltstack.models import SaltStackProperty
+from nodeconductor_paas_oracle.models import Deployment
 
 
 class OracleDeploymentEventLogger(EventLogger):
-    property = SaltStackProperty
+    deployment = Deployment
 
     class Meta:
         event_types = (
