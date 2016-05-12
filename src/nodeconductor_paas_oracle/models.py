@@ -71,7 +71,7 @@ class Deployment(structure_models.Resource):
     service_project_link = models.ForeignKey(
         OracleServiceProjectLink, related_name='deployments', on_delete=models.PROTECT)
 
-    support_request = models.ForeignKey('nodeconductor_jira.Issue', related_name='+', null=True)
+    support_requests = models.ManyToManyField('nodeconductor_jira.Issue', related_name='+')
     tenant = models.ForeignKey('openstack.Tenant', related_name='+')
     flavor = models.ForeignKey(Flavor, related_name='+')
     report = models.TextField(blank=True)
