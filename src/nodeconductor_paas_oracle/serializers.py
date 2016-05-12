@@ -5,6 +5,7 @@ from nodeconductor.core import serializers as core_serializers
 from nodeconductor.core.fields import NaturalChoiceField
 from nodeconductor.openstack import models as openstack_models
 from nodeconductor.structure import serializers as structure_serializers
+from nodeconductor_jira.models import Issue
 
 from . import models
 
@@ -46,6 +47,17 @@ class NestedFlavorSerializer(core_serializers.HyperlinkedRelatedModelSerializer,
         pass
 
 
+class SupportRequestSerializer(core_serializers.HyperlinkedRelatedModelSerializer):
+
+    class Meta:
+        model = Issue
+        view_name = 'jira-issues-detail'
+        fields = ('url', 'uuid', 'summary', 'key')
+        extra_kwargs = {
+            'url': {'lookup_field': 'uuid'},
+        }
+
+
 class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
 
     service = serializers.HyperlinkedRelatedField(
@@ -70,10 +82,7 @@ class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
         queryset=models.Flavor.objects.all(),
         write_only=True)
 
-    support_request = serializers.HyperlinkedRelatedField(
-        view_name='jira-issues-detail',
-        lookup_field='uuid',
-        read_only=True)
+    support_requests = SupportRequestSerializer(read_only=True, many=True)
 
     ssh_public_key = serializers.HyperlinkedRelatedField(
         view_name='sshpublickey-detail',
@@ -88,7 +97,7 @@ class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
         model = models.Deployment
         view_name = 'oracle-deployments-detail'
         fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
-            'tenant', 'flavor', 'ssh_public_key', 'support_request',
+            'tenant', 'flavor', 'ssh_public_key', 'support_requests',
             'db_name', 'db_size', 'db_arch_size', 'db_type', 'db_version', 'db_template', 'db_charset',
             'user_data', 'report', 'key_name', 'key_fingerprint',
         )
@@ -97,7 +106,7 @@ class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
             'db_name', 'db_size', 'db_arch_size', 'db_type', 'db_version', 'db_template', 'db_charset',
         )
         read_only_fields = structure_serializers.BaseResourceSerializer.Meta.read_only_fields + (
-            'support_request', 'report', 'key_name', 'key_fingerprint',
+            'report', 'key_name', 'key_fingerprint',
         )
 
     def get_fields(self):

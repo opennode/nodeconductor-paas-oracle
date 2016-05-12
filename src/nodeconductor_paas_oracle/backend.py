@@ -39,68 +39,50 @@ class OracleBackend(ServiceBackend):
         if not ssh_key:
             ssh_key = type('SshKey', (object,), {'name': '', 'uuid': type('UUID', (object,), {'hex': ''})})
 
-        self.sync()  # fetch project
-        message = self._compile_message(deployment, 'provision', ssh_key=ssh_key)
-        payload = {
-            "project": reverse('jira-projects-detail', kwargs={'uuid': self.project.uuid.hex}),
-            "summary": self.templates['provision']['summary'],
-            "description": message,
-            "priority": dict(Issue.Priority.CHOICES).get(Issue.Priority.MINOR),
-            "impact": dict(Issue.Impact.CHOICES).get(Issue.Impact.MEDIUM),
-        }
-
-        data = self._jira_request(
-            'jira-issues-list', request, data=payload, error_message="Can't create JIRA ticket")
-        deployment.support_request = Issue.objects.get(uuid=data['uuid'])
-        deployment.save(update_fields=['support_request'])
+        self._jira_ticket('provision', deployment, request, ssh_key=ssh_key)
 
     def destroy(self, deployment, request):
-        self._support_request('undeploy', deployment, request)
+        self._jira_ticket('undeploy', deployment, request)
 
     def resize(self, deployment, request):
-        self._support_request('resize', deployment, request)
+        self._jira_ticket('resize', deployment, request)
 
     def stop(self, deployment, request, message="Request for stopping Oracle DB PaaS instance"):
-        self._support_request('support', deployment, request, message=message)
+        self._jira_ticket('support', deployment, request, message=message)
 
     def start(self, deployment, request, message="Request for starting Oracle DB PaaS instance"):
-        self._support_request('support', deployment, request, message=message)
+        self._jira_ticket('support', deployment, request, message=message)
 
     def restart(self, deployment, request, message="Request for restarting Oracle DB PaaS instance"):
-        self._support_request('support', deployment, request, message=message)
+        self._jira_ticket('support', deployment, request, message=message)
 
     def support_request(self, deployment, request, message):
-        self._support_request('support', deployment, request, message=message)
+        self._jira_ticket('support', deployment, request, message=message)
 
-    def _support_request(self, name, deployment, request, **kwargs):
-        issue = reverse('jira-issues-detail', kwargs={'uuid': deployment.support_request.uuid.hex})
-        self._jira_request(
-            'jira-comments-list',
-            request,
-            data={
-                "issue": issue,
-                "message": self._compile_message(deployment, name, add_title=True, **kwargs),
-            },
-            error_message="Can't add JIRA comment")
+    def _jira_ticket(self, name, deployment, request, **kwargs):
+        self.sync()  # fetch project
 
-    def _jira_request(self, view_name, request, data=None, error_message="Request failed"):
-        response = request_api(request, view_name, method='POST' if data else 'GET', data=data)
-        if not response.ok:
-            logger.error('[%s] Failed request to %s: %s' % (
-                response.status_code, response.url, response.text))
-            error_message += ': %s'
-            raise OracleBackendError(error_message % response.text)
-        return response.json()
-
-    def _compile_message(self, deployment, template_name, add_title=False, **kwargs):
-        template = self.templates[template_name]
+        template = self.templates[name]
         message = unicode(template['details']).format(
             deployment=deployment,
             customer=deployment.service_project_link.service.customer,
             project=deployment.service_project_link.project,
             **kwargs)
 
-        if add_title:
-            message = template['summary'] + '\n\n' + message
+        payload = {
+            "project": reverse('jira-projects-detail', kwargs={'uuid': self.project.uuid.hex}),
+            "summary": template['summary'],
+            "description": message,
+            "priority": dict(Issue.Priority.CHOICES).get(Issue.Priority.MINOR),
+            "impact": dict(Issue.Impact.CHOICES).get(Issue.Impact.MEDIUM),
+        }
 
-        return message
+        response = request_api(request, 'jira-issues-list', method='POST', data=payload)
+        if not response.ok:
+            logger.error('[%s] Failed request to %s: %s' % (
+                response.status_code, response.url, response.text))
+            raise OracleBackendError("Can't create JIRA ticket: %s" % response.text)
+
+        data = response.json()
+        issue = Issue.objects.get(uuid=data['uuid'])
+        deployment.support_requests.add(issue)
