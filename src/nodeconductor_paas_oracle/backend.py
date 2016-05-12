@@ -39,25 +39,25 @@ class OracleBackend(ServiceBackend):
         if not ssh_key:
             ssh_key = type('SshKey', (object,), {'name': '', 'uuid': type('UUID', (object,), {'hex': ''})})
 
-        self._jira_ticket('provision', deployment, request, ssh_key=ssh_key)
+        return self._jira_ticket('provision', deployment, request, ssh_key=ssh_key)
 
     def destroy(self, deployment, request):
-        self._jira_ticket('undeploy', deployment, request)
+        return self._jira_ticket('undeploy', deployment, request)
 
     def resize(self, deployment, request):
-        self._jira_ticket('resize', deployment, request)
+        return self._jira_ticket('resize', deployment, request)
 
     def stop(self, deployment, request, message="Request for stopping Oracle DB PaaS instance"):
-        self._jira_ticket('support', deployment, request, message=message)
+        return self._jira_ticket('support', deployment, request, message=message)
 
     def start(self, deployment, request, message="Request for starting Oracle DB PaaS instance"):
-        self._jira_ticket('support', deployment, request, message=message)
+        return self._jira_ticket('support', deployment, request, message=message)
 
     def restart(self, deployment, request, message="Request for restarting Oracle DB PaaS instance"):
-        self._jira_ticket('support', deployment, request, message=message)
+        return self._jira_ticket('support', deployment, request, message=message)
 
     def support_request(self, deployment, request, message):
-        self._jira_ticket('support', deployment, request, message=message)
+        return self._jira_ticket('support', deployment, request, message=message)
 
     def _jira_ticket(self, name, deployment, request, **kwargs):
         self.sync()  # fetch project
@@ -86,3 +86,4 @@ class OracleBackend(ServiceBackend):
         data = response.json()
         issue = Issue.objects.get(uuid=data['uuid'])
         deployment.support_requests.add(issue)
+        return issue
