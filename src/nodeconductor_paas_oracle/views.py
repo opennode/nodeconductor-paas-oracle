@@ -3,6 +3,7 @@ from django.utils import timezone
 from rest_framework import decorators, exceptions, response, status
 
 from nodeconductor.structure import views as structure_views
+from log import event_logger
 
 from . import models, serializers
 from .backend import OracleBackendError
@@ -11,17 +12,21 @@ from .backend import OracleBackendError
 States = models.Deployment.States
 
 
-def track_exceptions(view_fn):
-    @wraps(view_fn)
-    def wrapped(self, request, resource, *args, **kwargs):
-        try:
-            return view_fn(self, request, resource, *args, **kwargs)
-        except OracleBackendError as e:
-            resource.error_message = unicode(e)
-            resource.set_erred()
-            resource.save(update_fields=['state', 'error_message'])
-            raise exceptions.APIException(e)
-    return wrapped
+def safe_operation(valid_state=None):
+    def decorator(view_fn):
+        @wraps(view_fn)
+        def wrapped(self, request, *args, **kwargs):
+            try:
+                resource = self.get_object()
+                structure_views.check_operation(request.user, resource, view_fn.__name__, valid_state)
+                return view_fn(self, request, resource, *args, **kwargs)
+            except OracleBackendError as e:
+                resource.error_message = unicode(e)
+                resource.set_erred()
+                resource.save(update_fields=['state', 'error_message'])
+                raise exceptions.APIException(e)
+        return wrapped
+    return decorator
 
 
 class OracleServiceViewSet(structure_views.BaseServiceViewSet):
@@ -68,7 +73,7 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         resource.save(update_fields=['state'])
 
     @decorators.detail_route(methods=['post'])
-    @structure_views.safe_operation(valid_state=States.PROVISIONING)
+    @safe_operation(valid_state=States.PROVISIONING)
     def provision(self, request, resource, uuid=None):
         """ Complete provisioning. Example:
 
@@ -90,12 +95,19 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
             resource.start_time = timezone.now()
             resource.set_online()
             resource.save(update_fields=['report', 'start_time', 'state'])
+            event_logger.oracle_deployment.info(
+                'Oracle deployment {deployment_name} report has been updated.',
+                event_type='oracle_deployment_report_updated',
+                event_context={
+                    'deployment': self.resource,
+                }
+            )
             return response.Response({'detail': "Provision complete"})
         else:
             return response.Response({'detail': "Empty report"}, status=status.HTTP_400_BAD_REQUEST)
 
     @decorators.detail_route(methods=['post'])
-    @structure_views.safe_operation()
+    @safe_operation()
     def update_report(self, request, resource, uuid=None):
         """ Update provisioning report. Example:
 
@@ -118,13 +130,19 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         if report:
             resource.report = report
             resource.save(update_fields=['report'])
+            event_logger.oracle_deployment.info(
+                'Oracle deployment {deployment_name} report has been updated.',
+                event_type='oracle_deployment_report_updated',
+                event_context={
+                    'deployment': self.resource,
+                }
+            )
             return response.Response({'detail': "Report has been updated"})
         else:
             return response.Response({'detail': "Empty report"}, status=status.HTTP_400_BAD_REQUEST)
 
     @decorators.detail_route(methods=['post'])
-    @structure_views.safe_operation(valid_state=States.ONLINE)
-    @track_exceptions
+    @safe_operation()
     def support(self, request, resource, uuid=None):
         """ File custom support request.
 
@@ -144,11 +162,23 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         serializer = self.get_serializer(resource, data=request.data)
         serializer.is_valid(raise_exception=True)
         backend = resource.get_backend()
-        backend.support_request(resource, self.request, serializer.validated_data['message'])
-        return response.Response({'detail': "Support request accepted"})
+        ticket = backend.support_request(resource, self.request, serializer.validated_data['message'])
+
+        # XXX: Switch this and below to a more standard resource_stop_scheduled / resource_stop_succeeded for ECC release
+        event_logger.oracle_deployment.info(
+            'Support for Oracle deployment {deployment_name} has been requested.',
+            event_type='oracle_deployment_support_requested',
+            event_context={
+                'deployment': resource,
+            }
+        )
+
+        return response.Response(
+            {'detail': "Support request accepted", 'jira_issue_key': ticket.backend_id},
+            status=status.HTTP_202_ACCEPTED)
 
     @decorators.detail_route(methods=['post'])
-    @structure_views.safe_operation(valid_state=(States.ONLINE, States.RESIZING))
+    @safe_operation(valid_state=(States.ONLINE, States.RESIZING))
     def resize(self, request, resource, uuid=None):
         """ Request for DB Instance resize. Example:
 
@@ -172,6 +202,14 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
                 raise exceptions.PermissionDenied
             resource.set_resized()
             resource.save(update_fields=['state'])
+            event_logger.oracle_deployment.info(
+                'Resize request for Oracle deployment {deployment_name} has been fulfilled.',
+                event_type='oracle_deployment_resize_succeeded',
+                event_context={
+                    'deployment': resource,
+                }
+            )
+
             return response.Response({'detail': "Resizing complete"})
 
         serializer = self.get_serializer(resource, data=request.data)
@@ -182,14 +220,23 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         resource.save(update_fields=['flavor', 'state'])
 
         backend = resource.get_backend()
-        backend.resize(resource, self.request)
+        ticket = backend.resize(resource, self.request)
 
         resource.begin_resizing()
         resource.save(update_fields=['state'])
-        return response.Response({'detail': "Resizing scheduled"})
+        event_logger.oracle_deployment.info(
+            'Resize request for Oracle deployment {deployment_name} has been submitted.',
+            event_type='oracle_deployment_resize_requested',
+            event_context={
+                'deployment': resource,
+            }
+        )
 
-    @structure_views.safe_operation(valid_state=(States.OFFLINE, States.DELETING))
-    @track_exceptions
+        return response.Response(
+            {'detail': "Resizing scheduled", 'jira_issue_key': ticket.backend_id},
+            status=status.HTTP_202_ACCEPTED)
+
+    @safe_operation(valid_state=(States.OFFLINE, States.DELETING))
     def destroy(self, request, resource, uuid=None):
         """ Request for DB Instance deletion or confirm deletion success.
             A proper action will be taken depending on the current deployment state.
@@ -205,14 +252,17 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         resource.save(update_fields=['state'])
 
         backend = resource.get_backend()
-        backend.destroy(resource, self.request)
+        ticket = backend.destroy(resource, self.request)
 
         resource.begin_deleting()
         resource.save(update_fields=['state'])
-        return response.Response({'detail': "Deletion scheduled"})
+
+        return response.Response(
+            {'detail': "Deletion scheduled", 'jira_issue_key': ticket.backend_id},
+            status=status.HTTP_202_ACCEPTED)
 
     @decorators.detail_route(methods=['post'])
-    @structure_views.safe_operation(valid_state=(States.OFFLINE, States.STARTING))
+    @safe_operation(valid_state=(States.OFFLINE, States.STARTING))
     def start(self, request, resource, uuid=None):
         """ Request for DB Instance starting or confirm starting success.
             A proper action will be taken depending on the current deployment state.
@@ -224,20 +274,37 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
             else:
                 resource.set_online()
                 resource.save(update_fields=['state'])
+                event_logger.oracle_deployment.info(
+                    'Start request for Oracle deployment {deployment_name} has been fulfilled.',
+                    event_type='oracle_deployment_start_succeeded',
+                    event_context={
+                        'deployment': resource,
+                    }
+                )
                 return response.Response({'detail': "Deployment started"})
 
         resource.schedule_starting()
         resource.save(update_fields=['state'])
 
         backend = resource.get_backend()
-        backend.start(resource, self.request)
+        ticket = backend.start(resource, self.request)
 
         resource.begin_starting()
         resource.save(update_fields=['state'])
-        return response.Response({'detail': "Starting scheduled"})
+        event_logger.oracle_deployment.info(
+            'Start request for Oracle deployment {deployment_name} has been submitted.',
+            event_type='oracle_deployment_start_requested',
+            event_context={
+                'deployment': resource,
+            }
+        )
+
+        return response.Response(
+            {'detail': "Starting scheduled", 'jira_issue_key': ticket.backend_id},
+            status=status.HTTP_202_ACCEPTED)
 
     @decorators.detail_route(methods=['post'])
-    @structure_views.safe_operation(valid_state=(States.ONLINE, States.STOPPING))
+    @safe_operation(valid_state=(States.ONLINE, States.STOPPING))
     def stop(self, request, resource, uuid=None):
         """ Request for DB Instance stopping or confirm stopping success.
             A proper action will be taken depending on the current deployment state.
@@ -249,20 +316,38 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
             else:
                 resource.set_offline()
                 resource.save(update_fields=['state'])
+                event_logger.oracle_deployment.info(
+                    'Stop request for Oracle deployment {deployment_name} has been fulfilled.',
+                    event_type='oracle_deployment_stop_succeeded',
+                    event_context={
+                        'deployment': resource,
+                    }
+                )
+
                 return response.Response({'detail': "Deployment stopped"})
 
         resource.schedule_stopping()
         resource.save(update_fields=['state'])
 
         backend = resource.get_backend()
-        backend.stop(resource, self.request)
+        ticket = backend.stop(resource, self.request)
 
         resource.begin_stopping()
         resource.save(update_fields=['state'])
-        return response.Response({'detail': "Stopping scheduled"})
+        event_logger.oracle_deployment.info(
+            'Stop request for Oracle deployment {deployment_name} has been submitted.',
+            event_type='oracle_deployment_stop_requested',
+            event_context={
+                'deployment': resource,
+            }
+        )
+
+        return response.Response(
+            {'detail': "Stopping scheduled", 'jira_issue_key': ticket.backend_id},
+            status=status.HTTP_202_ACCEPTED)
 
     @decorators.detail_route(methods=['post'])
-    @structure_views.safe_operation(valid_state=(States.ONLINE, States.RESTARTING))
+    @safe_operation(valid_state=(States.ONLINE, States.RESTARTING))
     def restart(self, request, resource, uuid=None):
         """ Request for DB Instance restarting or confirm restarting success.
             A proper action will be taken depending on the current deployment state.
@@ -274,14 +359,32 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
             else:
                 resource.set_online()
                 resource.save(update_fields=['state'])
+                event_logger.oracle_deployment.info(
+                    'Restart request for Oracle deployment {deployment_name} has been fulfilled.',
+                    event_type='oracle_deployment_restart_succeeded',
+                    event_context={
+                        'deployment': resource,
+                    }
+                )
+
                 return response.Response({'detail': "Deployment restarted"})
 
         resource.schedule_restarting()
         resource.save(update_fields=['state'])
 
         backend = resource.get_backend()
-        backend.restart(resource, self.request)
+        ticket = backend.restart(resource, self.request)
 
         resource.begin_restarting()
         resource.save(update_fields=['state'])
-        return response.Response({'detail': "Restarting scheduled"})
+        event_logger.oracle_deployment.info(
+            'Restart request for Oracle deployment {deployment_name} has been submitted.',
+            event_type='oracle_deployment_restart_requested',
+            event_context={
+                'deployment': resource,
+            }
+        )
+
+        return response.Response(
+            {'detail': "Restarting scheduled", 'jira_issue_key': ticket.backend_id},
+            status=status.HTTP_202_ACCEPTED)

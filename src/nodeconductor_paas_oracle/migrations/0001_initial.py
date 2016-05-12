@@ -116,8 +116,8 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='deployment',
-            name='support_request',
-            field=models.ForeignKey(related_name='+', to='nodeconductor_jira.Issue', null=True),
+            name='support_requests',
+            field=models.ManyToManyField(related_name='_deployment_support_requests_+', to='nodeconductor_jira.Issue'),
         ),
         migrations.AddField(
             model_name='deployment',
