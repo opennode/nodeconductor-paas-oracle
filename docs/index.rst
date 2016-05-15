@@ -11,14 +11,6 @@ Guide
 
    installation
 
-API
----
-
-.. toctree::
-   :maxdepth: 1
-
-   api
-
 Endpoints
 ---------
 
