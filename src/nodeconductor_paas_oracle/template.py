@@ -4,7 +4,7 @@ from django.contrib.admin.widgets import AdminTextareaWidget
 from rest_framework import serializers
 
 from nodeconductor.core import models as core_models
-from nodeconductor.openstack.models import Tenant
+from nodeconductor_openstack.models import Tenant
 from nodeconductor.template.forms import ResourceTemplateForm
 from nodeconductor.template.serializers import BaseResourceTemplateSerializer
 
