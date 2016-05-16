@@ -5,7 +5,7 @@ from rest_framework import decorators, exceptions, response, status
 from nodeconductor.structure import views as structure_views
 from log import event_logger
 
-from . import models, serializers
+from . import models, serializers, filters
 from .backend import OracleBackendError
 
 
@@ -48,6 +48,7 @@ class FlavorViewSet(structure_views.BaseServicePropertyViewSet):
 class DeploymentViewSet(structure_views.BaseResourceViewSet):
     queryset = models.Deployment.objects.all()
     serializer_class = serializers.DeploymentSerializer
+    filter_class = filters.DeploymentFilter
 
     def get_serializer_class(self):
         if self.action == 'resize':
