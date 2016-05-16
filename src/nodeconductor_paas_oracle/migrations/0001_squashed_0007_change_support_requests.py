@@ -16,10 +16,12 @@ import nodeconductor.core.validators
 
 class Migration(migrations.Migration):
 
+    replaces = [(b'nodeconductor_paas_oracle', '0001_initial'), (b'nodeconductor_paas_oracle', '0002_flavor'), (b'nodeconductor_paas_oracle', '0003_db_type_choices'), (b'nodeconductor_paas_oracle', '0004_remove_flavor_backend_id'), (b'nodeconductor_paas_oracle', '0005_add_db_arch_size'), (b'nodeconductor_paas_oracle', '0006_add_ssh_metadata'), (b'nodeconductor_paas_oracle', '0007_change_support_requests')]
+
     dependencies = [
         ('structure', '0035_settings_tags_and_scope'),
         ('taggit', '0002_auto_20150616_2121'),
-        ('nodeconductor_openstack', '0001_initial'),
+        ('openstack', '0001_initial'),
         ('nodeconductor_jira', '0004_project_available_for_all'),
     ]
 
@@ -127,7 +129,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='deployment',
             name='tenant',
-            field=models.ForeignKey(related_name='+', to='nodeconductor_openstack.Tenant'),
+            field=models.ForeignKey(related_name='+', to='openstack.Tenant'),
         ),
         migrations.AlterUniqueTogether(
             name='oracleserviceprojectlink',

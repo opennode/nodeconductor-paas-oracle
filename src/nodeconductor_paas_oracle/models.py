@@ -72,7 +72,7 @@ class Deployment(structure_models.Resource):
         OracleServiceProjectLink, related_name='deployments', on_delete=models.PROTECT)
 
     support_requests = models.ManyToManyField('nodeconductor_jira.Issue', related_name='+')
-    tenant = models.ForeignKey('nodeconductor_openstack.Tenant', related_name='+')
+    tenant = models.ForeignKey('openstack.Tenant', related_name='+')
     flavor = models.ForeignKey(Flavor, related_name='+')
     report = models.TextField(blank=True)
     db_name = models.CharField(max_length=256)
