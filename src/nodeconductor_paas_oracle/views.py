@@ -3,10 +3,10 @@ from django.utils import timezone
 from rest_framework import decorators, exceptions, response, status
 
 from nodeconductor.structure import views as structure_views
-from log import event_logger
 
 from . import models, serializers, filters
 from .backend import OracleBackendError
+from .log import event_logger
 
 
 States = models.Deployment.States
@@ -167,15 +167,16 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
 
         # XXX: Switch this and below to a more standard resource_stop_scheduled / resource_stop_succeeded for ECC release
         event_logger.oracle_deployment.info(
-            'Support for Oracle deployment {deployment_name} has been requested.',
+            'Support for Oracle deployment {deployment_name} has been requested ({jira_issue_key}).',
             event_type='oracle_deployment_support_requested',
             event_context={
                 'deployment': resource,
+                'jira_issue_key': ticket.key,
             }
         )
 
         return response.Response(
-            {'detail': "Support request accepted", 'jira_issue_uuid': ticket.uuid.hex},
+            {'detail': "Support request accepted", 'jira_issue_uuid': ticket.uuid.hex, 'jira_issue_key': ticket.key},
             status=status.HTTP_202_ACCEPTED)
 
     @decorators.detail_route(methods=['post'])
@@ -226,15 +227,16 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         resource.begin_resizing()
         resource.save(update_fields=['state'])
         event_logger.oracle_deployment.info(
-            'Resize request for Oracle deployment {deployment_name} has been submitted.',
+            'Resize request for Oracle deployment {deployment_name} has been submitted ({jira_issue_key}).',
             event_type='oracle_deployment_resize_requested',
             event_context={
                 'deployment': resource,
+                'jira_issue_key': ticket.key,
             }
         )
 
         return response.Response(
-            {'detail': "Resizing scheduled", 'jira_issue_uuid': ticket.uuid.hex},
+            {'detail': "Resizing scheduled", 'jira_issue_uuid': ticket.uuid.hex, 'jira_issue_key': ticket.key},
             status=status.HTTP_202_ACCEPTED)
 
     @safe_operation(valid_state=(States.OFFLINE, States.DELETING))
@@ -259,7 +261,7 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         resource.save(update_fields=['state'])
 
         return response.Response(
-            {'detail': "Deletion scheduled", 'jira_issue_uuid': ticket.uuid.hex},
+            {'detail': "Deletion scheduled", 'jira_issue_uuid': ticket.uuid.hex, 'jira_issue_key': ticket.key},
             status=status.HTTP_202_ACCEPTED)
 
     @decorators.detail_route(methods=['post'])
@@ -293,15 +295,16 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         resource.begin_starting()
         resource.save(update_fields=['state'])
         event_logger.oracle_deployment.info(
-            'Start request for Oracle deployment {deployment_name} has been submitted.',
+            'Start request for Oracle deployment {deployment_name} has been submitted ({jira_issue_key}).',
             event_type='oracle_deployment_start_requested',
             event_context={
                 'deployment': resource,
+                'jira_issue_key': ticket.key,
             }
         )
 
         return response.Response(
-            {'detail': "Starting scheduled", 'jira_issue_uuid': ticket.uuid.hex},
+            {'detail': "Starting scheduled", 'jira_issue_uuid': ticket.uuid.hex, 'jira_issue_key': ticket.key},
             status=status.HTTP_202_ACCEPTED)
 
     @decorators.detail_route(methods=['post'])
@@ -336,15 +339,16 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         resource.begin_stopping()
         resource.save(update_fields=['state'])
         event_logger.oracle_deployment.info(
-            'Stop request for Oracle deployment {deployment_name} has been submitted.',
+            'Stop request for Oracle deployment {deployment_name} has been submitted ({jira_issue_key}).',
             event_type='oracle_deployment_stop_requested',
             event_context={
                 'deployment': resource,
+                'jira_issue_key': ticket.key,
             }
         )
 
         return response.Response(
-            {'detail': "Stopping scheduled", 'jira_issue_uuid': ticket.uuid.hex},
+            {'detail': "Stopping scheduled", 'jira_issue_uuid': ticket.uuid.hex, 'jira_issue_key': ticket.key},
             status=status.HTTP_202_ACCEPTED)
 
     @decorators.detail_route(methods=['post'])
@@ -379,13 +383,14 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
         resource.begin_restarting()
         resource.save(update_fields=['state'])
         event_logger.oracle_deployment.info(
-            'Restart request for Oracle deployment {deployment_name} has been submitted.',
+            'Restart request for Oracle deployment {deployment_name} has been submitted ({jira_issue_key}).',
             event_type='oracle_deployment_restart_requested',
             event_context={
                 'deployment': resource,
+                'jira_issue_key': ticket.key,
             }
         )
 
         return response.Response(
-            {'detail': "Restarting scheduled", 'jira_issue_uuid': ticket.uuid.hex},
+            {'detail': "Restarting scheduled", 'jira_issue_uuid': ticket.uuid.hex, 'jira_issue_key': ticket.key},
             status=status.HTTP_202_ACCEPTED)
