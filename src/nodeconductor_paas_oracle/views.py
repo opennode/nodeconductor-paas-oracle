@@ -2,6 +2,9 @@ from functools import wraps
 from django.utils import timezone
 from rest_framework import decorators, exceptions, response, status
 
+from nodeconductor.core import exceptions as core_exceptions
+from nodeconductor.core import models as core_models
+from nodeconductor.structure import ServiceBackendError
 from nodeconductor.structure import views as structure_views
 
 from . import models, serializers, filters
@@ -57,13 +60,34 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
             return serializers.SupportSerializer
         return super(DeploymentViewSet, self).get_serializer_class()
 
+    # XXX: overloaded base class method to skip emitting too generic event message
+    def perform_create(self, serializer):
+        service_project_link = serializer.validated_data['service_project_link']
+
+        if service_project_link.service.settings.state == core_models.SynchronizationStates.ERRED:
+            raise core_exceptions.IncorrectStateException(
+                detail='Cannot create resource if its service is in erred state.')
+
+        try:
+            self.perform_provision(serializer)
+        except ServiceBackendError as e:
+            raise exceptions.APIException(e)
+
     def perform_provision(self, serializer):
         resource = serializer.save()
         backend = resource.get_backend()
 
         try:
-            backend.provision(
+            ticket = backend.provision(
                 resource, self.request, ssh_key=serializer.validated_data.get('ssh_public_key'))
+            event_logger.resource.info(
+                '{resource_full_name} creation has been scheduled ({jira_issue_key}).',
+                event_type='resource_creation_scheduled',
+                event_context={
+                    'resource': serializer.instance,
+                    'jira_issue_key': ticket.key,
+                })
+
         except OracleBackendError as e:
             resource.error_message = unicode(e)
             resource.set_erred()
