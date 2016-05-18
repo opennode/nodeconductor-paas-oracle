@@ -81,11 +81,10 @@ class DeploymentViewSet(structure_views.BaseResourceViewSet):
             ticket = backend.provision(
                 resource, self.request, ssh_key=serializer.validated_data.get('ssh_public_key'))
             event_logger.resource.info(
-                '{resource_full_name} creation has been scheduled ({jira_issue_key}).',
+                '{resource_full_name} creation has been scheduled (%s).' % ticket.key,
                 event_type='resource_creation_scheduled',
                 event_context={
                     'resource': serializer.instance,
-                    'jira_issue_key': ticket.key,
                 })
 
         except OracleBackendError as e:
