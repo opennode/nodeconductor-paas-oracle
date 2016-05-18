@@ -94,12 +94,13 @@ class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
     db_type = NaturalChoiceField(choices=models.Deployment.Type.CHOICES)
 
     jira_issue_uuid = serializers.SerializerMethodField()
+    jira_issue_key = serializers.SerializerMethodField()
 
     class Meta(structure_serializers.BaseResourceSerializer.Meta):
         model = models.Deployment
         view_name = 'oracle-deployments-detail'
         fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
-            'tenant', 'flavor', 'ssh_public_key', 'jira_issue_uuid', 'support_requests',
+            'tenant', 'flavor', 'ssh_public_key', 'jira_issue_uuid', 'support_requests', 'jira_issue_key',
             'db_name', 'db_size', 'db_arch_size', 'db_type', 'db_version', 'db_template', 'db_charset',
             'user_data', 'report', 'key_name', 'key_fingerprint',
         )
@@ -124,6 +125,14 @@ class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
         try:
             backend = obj.get_backend()
             return next(issue.uuid.hex for issue in obj.support_requests.all()
+                        if issue.summary == backend.templates['provision']['summary'])
+        except StopIteration:
+            return None
+
+    def get_jira_issue_key(self, obj):
+        try:
+            backend = obj.get_backend()
+            return next(issue.key for issue in obj.support_requests.all()
                         if issue.summary == backend.templates['provision']['summary'])
         except StopIteration:
             return None

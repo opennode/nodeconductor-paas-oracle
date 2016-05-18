@@ -4,8 +4,10 @@ from nodeconductor_paas_oracle.models import Deployment
 
 class OracleDeploymentEventLogger(EventLogger):
     deployment = Deployment
+    jira_issue_key = basestring
 
     class Meta:
+        nullable_fields = ['jira_issue_key']
         event_types = (
             'oracle_deployment_resize_requested',
             'oracle_deployment_resize_succeeded',
