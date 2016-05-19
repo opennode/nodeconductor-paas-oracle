@@ -26,6 +26,10 @@ class Flavor(structure_models.BaseServiceProperty):
     ram = models.PositiveIntegerField(help_text='Memory size in MiB')
     disk = models.PositiveIntegerField(help_text='Root disk size in MiB')
 
+    @classmethod
+    def get_url_name(cls):
+        return 'oracle-flavors'
+
 
 class Deployment(structure_models.Resource):
 
