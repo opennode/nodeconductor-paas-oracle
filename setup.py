@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import sys
 from setuptools import setup, find_packages
 
 
@@ -8,17 +9,17 @@ dev_requires = [
 ]
 
 install_requires = [
-    'nodeconductor>=0.95.0',
+    'nodeconductor_jira>=0.1.0',
+    'nodeconductor_openstack>=0.2.0',
 ]
 
-
 setup(
-    name='oracle-paas',
+    name='nodeconductor-paas-oracle',
     version='0.1.0',
     author='OpenNode Team',
     author_email='info@opennodecloud.com',
     url='http://nodeconductor.com',
-    description='Plugin for custom Oracle PaaS',
+    description='Plugin for custom Oracle PaaS solution.',
     long_description=open('README.rst').read(),
     package_dir={'': 'src'},
     packages=find_packages('src', exclude=['*.tests', '*.tests.*', 'tests.*', 'tests']),
@@ -29,7 +30,7 @@ setup(
     },
     entry_points={
         'nodeconductor_extensions': (
-            'oracle_paas = oracle_paas.extension:OracleExtension',
+            'oracle_paas = nodeconductor_paas_oracle.extension:OracleExtension',
         ),
     },
     include_package_data=True,
@@ -38,6 +39,6 @@ setup(
         'Intended Audience :: Developers',
         'Intended Audience :: System Administrators',
         'Operating System :: OS Independent',
-        'License :: Apache v2',
+        'License :: OSI Approved :: Apache Software License',
     ],
 )
