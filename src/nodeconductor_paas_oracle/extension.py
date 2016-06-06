@@ -16,7 +16,7 @@ class OracleExtension(NodeConductorExtension):
                     Customer UUID: {customer.uuid.hex}
                     Project UUID: {project.project_group.uuid.hex}
                     Environment UUID: {project.uuid.hex}
-                    OpenStack tenant id: {deployment.tenant.uuid.hex}
+                    OpenStack tenant id: {deployment.tenant.backend_id}
 
                     Hardware Configuration:
                     Name: {deployment.name}
