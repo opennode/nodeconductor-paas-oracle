@@ -73,8 +73,8 @@ class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
     tenant = serializers.HyperlinkedRelatedField(
         view_name='openstack-tenant-detail',
         lookup_field='uuid',
-        queryset=openstack_models.Tenant.objects.all(),
-        write_only=True)
+        queryset=openstack_models.Tenant.objects.all())
+    tenant_name = serializers.ReadOnlyField(source='tenant.name')
 
     flavor = serializers.HyperlinkedRelatedField(
         view_name='oracle-flavors-detail',
@@ -100,9 +100,9 @@ class DeploymentSerializer(structure_serializers.BaseResourceSerializer):
         model = models.Deployment
         view_name = 'oracle-deployments-detail'
         fields = structure_serializers.BaseResourceSerializer.Meta.fields + (
-            'tenant', 'flavor', 'ssh_public_key', 'jira_issue_uuid', 'support_requests', 'jira_issue_key',
-            'db_name', 'db_size', 'db_arch_size', 'db_type', 'db_version', 'db_template', 'db_charset',
-            'user_data', 'report', 'key_name', 'key_fingerprint',
+            'tenant', 'tenant_name', 'flavor', 'ssh_public_key', 'jira_issue_uuid', 'support_requests',
+            'jira_issue_key', 'db_name', 'db_size', 'db_arch_size', 'db_type', 'db_version', 'db_template',
+            'db_charset', 'user_data', 'report', 'key_name', 'key_fingerprint',
         )
         protected_fields = structure_serializers.BaseResourceSerializer.Meta.protected_fields + (
             'tenant', 'flavor', 'user_data', 'ssh_public_key',
