@@ -50,11 +50,13 @@ class Deployment(structure_models.Resource):
         RAC = 1
         ASM = 2
         SINGLE = 3
+        NO = 4
 
         CHOICES = (
             (RAC, 'RAC'),
             (ASM, 'Single Instance/ASM'),
             (SINGLE, 'Single Instance'),
+            (NO, 'No database'),
         )
 
     class Template:
@@ -83,11 +85,12 @@ class Deployment(structure_models.Resource):
     db_size = models.PositiveIntegerField(
         validators=[MinValueValidator(10), MaxValueValidator(2048)], help_text='Data storage size in GB')
     db_arch_size = models.PositiveIntegerField(
-        validators=[MinValueValidator(10), MaxValueValidator(2048)], help_text='Archive storage size in GB')
+        validators=[MinValueValidator(10), MaxValueValidator(2048)], help_text='Archive storage size in GB',
+        null=True, blank=True)
     db_type = models.PositiveSmallIntegerField(choices=Type.CHOICES)
-    db_version = models.CharField(max_length=256, choices=Version.CHOICES)
-    db_template = models.CharField(max_length=256, choices=Template.CHOICES)
-    db_charset = models.CharField(max_length=256, choices=Charset.CHOICES)
+    db_version = models.CharField(max_length=256, choices=Version.CHOICES, blank=True)
+    db_template = models.CharField(max_length=256, choices=Template.CHOICES, blank=True)
+    db_charset = models.CharField(max_length=256, choices=Charset.CHOICES, blank=True)
     user_data = models.TextField(blank=True)
     # preserve initial key data
     key_name = models.CharField(max_length=50, blank=True)
