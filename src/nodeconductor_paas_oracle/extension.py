@@ -6,7 +6,7 @@ class OracleExtension(NodeConductorExtension):
     class Settings:
         ORACLE_TICKET_TEMPLATES = {
             'provision': {
-                'summary': "Request for a new Oracle DB PaaS instance",
+                'summary': "Request for a new Oracle instance",
                 'details': """
                     Oracle DB purchase details
 
