@@ -1,13 +1,15 @@
 Name: nodeconductor-paas-oracle
 Summary: Oracle PaaS plugin for NodeConductor
 Group: Development/Libraries
-Version: 0.2.0
+Version: 0.2.1
 Release: 1.el7
 License: Copyright 2016 OpenNode LLC.  All rights reserved.
 Url: http://nodeconductor.com
 Source0: %{name}-%{version}.tar.gz
 
-Requires: nodeconductor >= 0.95.0
+Requires: nodeconductor >= 0.101.2
+Requires: nodeconductor-jira >= 0.1.0
+Requires: nodeconductor-openstack >= 0.5.0
 
 BuildArch: noarch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
@@ -34,6 +36,9 @@ rm -rf %{buildroot}
 %defattr(-,root,root)
 
 %changelog
+* Thu Aug 4 2016 Jenkins <jenkins@opennodecloud.com> - 0.2.1-1.el7
+- New upstream release
+
 * Thu Aug 4 2016 Jenkins <jenkins@opennodecloud.com> - 0.2.0-1.el7
 - New upstream release
 
