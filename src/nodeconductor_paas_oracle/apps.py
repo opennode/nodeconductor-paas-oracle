@@ -17,8 +17,3 @@ class OracleConfig(AppConfig):
         # cost tracking
         from .cost_tracking import OracleCostTrackingBackend
         CostTrackingRegister.register(self.label, OracleCostTrackingBackend)
-
-        # template
-        from nodeconductor.template import TemplateRegistry
-        from nodeconductor_paas_oracle.template import OracleProvisionTemplateForm
-        TemplateRegistry.register(OracleProvisionTemplateForm)
