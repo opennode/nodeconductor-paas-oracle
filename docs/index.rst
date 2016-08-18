@@ -22,7 +22,7 @@ Endpoints
 License
 -------
 
-NodeConductor Oracle PaaS plugin is open-source under Apache v2 license.
+NodeConductor Oracle PaaS plugin is open-source under MIT license.
 
 
 Indices and tables
