@@ -9,8 +9,8 @@ dev_requires = [
 
 install_requires = [
     'nodeconductor_jira>=0.1.0',
-    'nodeconductor_openstack>=0.5.0',
-    'nodeconductor>=0.107.0',
+    'nodeconductor_openstack>0.6.0',
+    'nodeconductor>0.107.1',
 ]
 
 setup(
