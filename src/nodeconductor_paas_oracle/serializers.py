@@ -4,7 +4,7 @@ from nodeconductor.core import models as core_models
 from nodeconductor.core import serializers as core_serializers
 from nodeconductor.core.fields import NaturalChoiceField
 from nodeconductor.structure import serializers as structure_serializers
-from nodeconductor_openstack import models as openstack_models
+from nodeconductor_openstack.openstack import models as openstack_models
 from nodeconductor_jira.models import Issue
 
 from . import models
